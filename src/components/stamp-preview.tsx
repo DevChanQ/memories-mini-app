@@ -126,7 +126,7 @@ export default function StampPreview({
     }, [layout, noText]);
 
     if (!handle) {
-        handle = 'Your Handle'
+        handle = 'Your Nickname'
     }
     if (!headline) {
         headline = 'Your Memory'

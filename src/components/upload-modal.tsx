@@ -539,6 +539,8 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload, in
         setMobileStep(1)
     }
 
+    const submitDisabled = !selectedFile || !title.trim() || !handle.trim() || !location.trim() || isUploading || !!blockedReason
+
     if (!isOpen) return null
 
     return (
@@ -573,10 +575,8 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload, in
                     <MemoriesLogo theme='dark' />
                 </div> */}
                 <div onClick={handleClose} className='text-muted-foreground flex gap-1 items-center justify-center text-sm'>
-
                     New Permanent Memory
                 </div>
-
 
                 <form onSubmit={handleSubmit} className={cn(
                     'rounded-lg border-0 h-full border-black/20 text-black flex flex-col',
@@ -612,7 +612,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload, in
                         />
                     </div>
                     <div className={cn('grid gap-2 md:grid-cols-2')}>
-                        <div className='relative'>
+                        <div className='relative w-full'>
                             <button
                                 type="button"
                                 onClick={() => {
@@ -620,7 +620,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload, in
                                     requestGeolocation()
                                 }}
                                 disabled={isUploading}
-                                className='flex items-center justify-between w-full pl-8 pr-8 py-5 h-10 rounded-lg border border-gray-300 bg-[#F5F5F5] hover:bg-[#F5F5F5] focus-visible:ring-0 focus-visible:ring-offset-0 text-sm text-left disabled:opacity-50 disabled:cursor-not-allowed'
+                                className='flex items-center justify-between w-full pl-8 pr-8 py-5 h-10 rounded-lg border border-gray-300 bg-[#F5F5F5] hover:bg-[#F5F5F5] focus-visible:ring-0 focus-visible:ring-offset-0 text-left disabled:opacity-50 disabled:cursor-not-allowed'
                             >
                                 <span className={cn('truncate text-[#2C2C2C]')}>
                                     {location || 'Add Location'}
@@ -634,9 +634,9 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload, in
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                             </svg>
                         </div>
-                        <div className='relative'>
+                        <div className='relative w-full'>
                             <Input
-                                placeholder='Add Your Handle'
+                                placeholder='Add Your Nickname'
                                 className='pl-8 pr-8 py-5 text-[#2C2C2C] !placeholder-[#2C2C2C] rounded-lg border border-gray-300 !bg-[#F5F5F5] focus-visible:ring-0 focus-visible:ring-offset-0'
                                 value={handle}
                                 onChange={(e) => setHandle(e.target.value)}
@@ -811,7 +811,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload, in
                     <>
                         <Button
                             type="submit"
-                            disabled={!selectedFile || !title.trim() || !handle.trim() || !location.trim() || isUploading || !!blockedReason}
+                            disabled={submitDisabled}
                             className='w-full mt-auto bg-[#000DFF] disabled:bg-gray-500 font-light text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed text-xl p-6'
                         >
                             {isUploading ? 'Sharing...' : 'Share Memory'}
@@ -900,7 +900,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload, in
             </div>
 
             {/* Preview section - desktop only */}
-            {!isMobile && <div className='flex flex-1 flex-col relative gap-0 items-center justify-center bg-[#1E1E1E] rounded-r-lg !max-h-[90vh] h-full px-10'>
+            {!isMobile && <div className='flex flex-col relative gap-0 items-center justify-center bg-[#1E1E1E] rounded-r-lg !max-h-[90vh] h-full px-10'>
                 <p className='absolute top-4 text-muted-foreground'>Preview</p>
                 <StampPreview
                     headline={title}
@@ -909,7 +909,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload, in
                     date={datetime ? new Date(datetime).toLocaleDateString() : new Date().toLocaleDateString()}
                     imageSrc={previewUrl}
                     layout={orientation}
-                    className={cn("scale-90 flex-1", orientation === 'vertical' ? 'max-h-[80vh]' : 'max-h-[26vw]')}
+                    className={cn("scale-90", orientation === 'vertical' ? 'h-[80vh]' : 'w-[50vw]')}
                     onReselect={handleReselect}
                     isProcessing={isProcessing}
                     onHeadlineChange={setTitle}
