@@ -106,17 +106,17 @@ export default function StampPreview({
         setTimeout(calculateScaleAndOffset, 100);
 
         // Use ResizeObserver to detect size changes
-        const observer = new ResizeObserver(() => {
-            calculateScaleAndOffset();
-        });
-        observer.observe(containerRef.current);
+        // const observer = new ResizeObserver(() => {
+        //     calculateScaleAndOffset();
+        // });
+        // observer.observe(containerRef.current);
 
         // Also listen for window resize
-        window.addEventListener('resize', calculateScaleAndOffset);
+        // window.addEventListener('resize', calculateScaleAndOffset);
 
         return () => {
-            observer.disconnect();
-            window.removeEventListener('resize', calculateScaleAndOffset);
+            // observer.disconnect();
+            // window.removeEventListener('resize', calculateScaleAndOffset);
         };
     }, [layout, noText]);
 
