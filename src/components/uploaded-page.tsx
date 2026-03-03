@@ -350,10 +350,10 @@ const UploadedPage: React.FC = () => {
                 {/* Title Section */}
                 <div className="text-center space-y-3 max-w-2xl">
                     <h1 className="text-white font-instrument text-4xl md:text-6xl leading-tight">
-                        Your memory is now permanent
+                        This memory is now permanent
                     </h1>
                     <p className="text-white/80 font-montserrat text-lg md:text-xl">
-                        Preserved for at least the next 200 years - for free!
+                        Preserved on Arweave for centuries.
                     </p>
                 </div>
 

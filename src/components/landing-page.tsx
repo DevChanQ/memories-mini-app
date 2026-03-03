@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router'
 import { Upload } from 'lucide-react'
 import { Button } from './ui/button'
 import UploadModal, { type UploadData } from './upload-modal'
+import { useIsMobile } from '../hooks/use-mobile'
 import imageCompression from 'browser-image-compression';
 import { ArconnectSigner, TurboFactory } from '@ardrive/turbo-sdk/web';
 import permanentImage from "@/assets/permanent.png"
@@ -10,38 +11,6 @@ import { cn } from '@/lib/utils'
 import StampPreview from './stamp-preview'
 import { QuickWallet } from 'quick-wallet'
 import { loadNSFWModel } from '@/lib/nsfw'
-
-// GraphQL query for fetching Arweave transactions
-const MEMORIES_QUERY = `query GetMemories($after: String) {
-    transactions(
-        tags: [
-            {name: "App-Name", values: ["Memories-App"]}
-            {name: "App-Version", values: ["1.0.3"]}
-            {name: "Visibility", values: ["Public"]}
-        ],
-        after: $after
-        first: 20
-    ) {
-        edges {
-            cursor
-            node {
-                id
-                tags {
-                    name
-                    value
-                }
-            }
-        }
-    }
-}`
-
-interface ArweaveTransaction {
-    id: string
-    tags: Array<{
-        name: string
-        value: string
-    }>
-}
 
 interface MemoryData {
     id: string
@@ -107,6 +76,7 @@ const LandingPage: React.FC = () => {
     const [isLoadingMemories, setIsLoadingMemories] = useState(true)
     const [prevConnected, setPrevConnected] = useState(null)
     const [startTime, setStartTime] = useState(Date.now())
+    const isMobile = useIsMobile()
     const [isDragging, setIsDragging] = useState(false)
     const [initialFile, setInitialFile] = useState<File | null>(null)
     const api = QuickWallet
@@ -283,87 +253,34 @@ const LandingPage: React.FC = () => {
         navigate('/gallery')
     }, [navigate])
 
-    // Fetch random memories from gallery
-    const fetchRandomMemories = useCallback(async () => {
-        try {
-            setIsLoadingMemories(true)
-            const response = await fetch('https://arweave.net/graphql', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    query: MEMORIES_QUERY,
-                    variables: {}
-                })
-            })
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`)
-            }
-
-            const result = await response.json()
-            const transactions: ArweaveTransaction[] = result.data.transactions.edges.map((edge: any) => edge.node)
-
-            // Filter for valid images and convert to MemoryData
-            const memories: MemoryData[] = []
-            for (const transaction of transactions) {
-                const tags = transaction.tags.reduce((acc, tag) => {
-                    acc[tag.name] = tag.value
-                    return acc
-                }, {} as Record<string, string>)
-
-                // Check if it's an image
-                const contentType = tags['Content-Type']
-                if (contentType && contentType.startsWith('image/')) {
-                    const imageUrl = `https://arweave.net/${transaction.id}`
-
-                    // Try to verify the image is accessible
-                    try {
-                        const imgCheck = await fetch(imageUrl, { method: 'HEAD' })
-                        if (imgCheck.ok) {
-                            memories.push({
-                                id: transaction.id,
-                                imageUrl,
-                                title: tags.Title || tags.Name || 'A Memory',
-                                location: tags.Location || 'SOMEWHERE',
-                                handle: tags.Handle || '@memories',
-                                date: new Date().toLocaleDateString('en-US', {
-                                    year: 'numeric',
-                                    month: 'short',
-                                    day: 'numeric'
-                                })
-                            })
-                        }
-                    } catch (e) {
-                        console.log('Failed to verify image:', transaction.id)
-                    }
-                }
-
-                // Stop after we have 3-5 valid memories
-                if (memories.length >= 5) break
-            }
-
-            // Shuffle and pick 2 random memories for display
-            const shuffled = memories.sort(() => Math.random() - 0.5)
-            setRandomMemories(shuffled.slice(0, 2))
-        } catch (error) {
-            console.error('Failed to fetch random memories:', error)
-            // Set empty array so we fall back to placeholder
-            setRandomMemories([])
-        } finally {
-            setIsLoadingMemories(false)
-        }
-    }, [])
-
-    // Load random memories on mount
+    // Use two static placeholder stamps instead of fetching from Arweave
     useEffect(() => {
-        fetchRandomMemories()
-    }, [fetchRandomMemories])
+        const placeholders: MemoryData[] = [
+            {
+                id: 'placeholder-1',
+                imageUrl: '',
+                title: 'Your first memory',
+                location: 'ANYWHERE, EARTH',
+                handle: '@YOU',
+                date: 'TODAY'
+            },
+            {
+                id: 'placeholder-2',
+                imageUrl: '',
+                title: 'Your first memory',
+                location: 'ANYWHERE, EARTH',
+                handle: '@YOU',
+                date: 'TODAY'
+            }
+        ]
+
+        setRandomMemories(placeholders)
+        setIsLoadingMemories(false)
+    }, [])
 
     return (
         <div
-            className="flex flex-col min-h-screen max-h-screen bg-black relative overflow-scroll md:overflow-hidden"
+            className="flex flex-col min-h-screen h-auto md:h-screen bg-black relative overflow-scroll md:overflow-hidden"
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
@@ -379,22 +296,22 @@ const LandingPage: React.FC = () => {
             )}
 
             {/* Header */}
-            <div className="fixed z-10 left-0 right-0 p-6">
+            <div className="z-10 left-0 right-0 p-6">
                 <MemoriesLogo />
             </div>
 
             {/* Main Content */}
-            <div className="relative z-10 flex-1 px-6 md:px-16 py-10 md:py-0 overflow-scroll md:overflow-hidden">
+            <div className="relative z-10 flex-1 px-6 md:px-16 pb-10 overflow-hidden">
                 {/* Welcome Section - Always Visible */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center h-[90vh]">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
                     {/* Left Content */}
-                    <div className="space-y-10 self-center">
+                    <div className="relative space-y-10 self-center pt-6 md:pt-0 lg:-top-10">
                         <div className="space-y-6">
                             <h2 className="text-white font-instrument text-5xl md:text-8xl md:leading-[90px]">
                                 Your memories <br />can last forever
                             </h2>
                             <p className="font-montserrat text-white text-xl leading-relaxed">
-                                Save your favourite photo memory, forever - for free!<br /> Seriously, no strings attached, own your memories with Arweave,<br /> upload now.
+                                Save your favourite photo memory, forever<br /> Seriously, no strings attached, own your memories with Arweave,<br /> upload now.
                             </p>
                         </div>
 
@@ -419,8 +336,8 @@ const LandingPage: React.FC = () => {
                     </div>
 
                     {/* Right Content - Stamp Preview */}
-                    <div className="pt-10 flex justify-center items-center">
-                        <div className="relative w-full max-w-lg left-4 md:left-0">
+                    <div className="flex justify-center items-center">
+                        <div className="relative w-full md:max-w-lg left-4 md:left-0">
                             {isLoadingMemories ? (
                                 <div className="flex items-center justify-center">
                                     <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -428,26 +345,26 @@ const LandingPage: React.FC = () => {
                             ) : randomMemories.length >= 2 ? (
                                 <>
                                     {/* First postcard - back layer */}
-                                    <div className="absolute transform -rotate-10 -translate-x-20 translate-y-10 opacity-90 hover:opacity-80 transition-all duration-300 cursor-pointer" onClick={() => navigate(`/view/${randomMemories[0].id}`)}>
+                                    <div className="absolute transform -rotate-5 -translate-x-10 md:-rotate-10 md:-translate-x-20 md:translate-y-10 translate-y-5 opacity-90 hover:opacity-80 transition-all duration-300 cursor-pointer" onClick={() => navigate(`/view/${randomMemories[0].id}`)}>
                                         <StampPreview
                                             headline={randomMemories[0].title}
                                             location={randomMemories[0].location}
                                             handle={randomMemories[0].handle}
                                             date={randomMemories[0].date}
                                             imageSrc={randomMemories[0].imageUrl}
-                                            layout="vertical"
+                                            layout={isMobile ? "horizontal" : "vertical"}
                                         />
                                     </div>
 
                                     {/* Second postcard - front layer */}
-                                    <div className="relative transform rotate-3 hover:rotate-0 transition-transform duration-300 cursor-pointer" onClick={() => navigate(`/view/${randomMemories[1].id}`)}>
+                                    <div className="relative transform rotate-2 -translate-x-3 hover:rotate-0 transition-transform duration-300 cursor-pointer" onClick={() => navigate(`/view/${randomMemories[1].id}`)}>
                                         <StampPreview
                                             headline={randomMemories[1].title}
                                             location={randomMemories[1].location}
                                             handle={randomMemories[1].handle}
                                             date={randomMemories[1].date}
                                             imageSrc={randomMemories[1].imageUrl}
-                                            layout="vertical"
+                                            layout={isMobile ? "horizontal" : "vertical"}
                                         />
                                     </div>
                                 </>
@@ -459,7 +376,7 @@ const LandingPage: React.FC = () => {
                                         handle={randomMemories[0].handle}
                                         date={randomMemories[0].date}
                                         imageSrc={randomMemories[0].imageUrl}
-                                        layout="vertical"
+                                        layout={isMobile ? "horizontal" : "vertical"}
                                     />
                                 </div>
                             ) : (
@@ -526,7 +443,7 @@ const LandingPage: React.FC = () => {
             />
 
             <div className='absolute bottom-2 left-2 z-20'>
-                <Link to="/tnc" className='text-[10px] text-muted-foreground/80 px-1'>Terms & Conditions</Link>
+                <Link to="/tnc" className='text-xs text-muted-foreground/80 px-1'>Terms & Conditions</Link>
             </div>
         </div>
     )

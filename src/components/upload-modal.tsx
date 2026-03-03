@@ -544,7 +544,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload, in
     return (
         <div
             className={cn(
-                "fixed inset-0 h-full bg-black/60 backdrop-blur-md z-50 flex items-center gap-0",
+                "fixed md:p-4 inset-0 h-full bg-black/60 backdrop-blur-md z-50 flex items-center gap-0",
                 isMobile ? "flex-col overflow-y-auto" : "justify-center"
             )}
             onClick={handleBackdropClick}
@@ -853,6 +853,50 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload, in
                         </>
                     )} */}
                 </form>
+
+                {/* Location Sheet */}
+                <Sheet open={isLocationSheetOpen} onOpenChange={setIsLocationSheetOpen}>
+                    <SheetContent side="bottom" className="bg-white gap-0 h-full">
+                        <div className="p-2 text-black flex-1 overflow-hidden">
+                            <Command className="bg-white border border-gray-300 rounded-lg h-full" shouldFilter={false}>
+                                <CommandInput
+                                    placeholder="Search locations..."
+                                    className="bg-white text-black"
+                                    onValueChange={fetchLocationSuggestions}
+                                />
+                                <CommandList className="bg-white max-h-full">
+                                    {isLoadingLocations ? (
+                                        <div className="py-6 text-center text-sm text-gray-500">Loading...</div>
+                                    ) : locationOptions.length === 0 ? (
+                                        <CommandEmpty className="text-gray-500">No locations found.</CommandEmpty>
+                                    ) : (
+                                        <CommandGroup className="bg-white">
+                                            {locationOptions.map((option) => (
+                                                <CommandItem
+                                                    key={option.value}
+                                                    value={option.value}
+                                                    onSelect={() => {
+                                                        setLocation(option.value)
+                                                        setIsLocationSheetOpen(false)
+                                                    }}
+                                                    className="cursor-pointer hover:bg-gray-100 text-black"
+                                                >
+                                                    <Check
+                                                        className={cn(
+                                                            "mr-2 h-4 w-4",
+                                                            location === option.value ? "opacity-100" : "opacity-0"
+                                                        )}
+                                                    />
+                                                    {option.label}
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    )}
+                                </CommandList>
+                            </Command>
+                        </div>
+                    </SheetContent>
+                </Sheet>
             </div>
 
             {/* Preview section - desktop only */}
@@ -903,55 +947,6 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload, in
                     </div>}
                 </div>
             </div>}
-
-            {/* Location Sheet */}
-            <Sheet open={isLocationSheetOpen} onOpenChange={setIsLocationSheetOpen}>
-                <SheetContent side="bottom" className="bg-white gap-0 h-full">
-                    <SheetHeader className='p-4 pb-2'>
-                        <SheetDescription>
-                            Search for a location or select from nearby places
-                        </SheetDescription>
-                    </SheetHeader>
-                    <div className="p-2 text-black flex-1 overflow-hidden">
-                        <Command className="bg-white border border-gray-300 rounded-lg h-full" shouldFilter={false}>
-                            <CommandInput
-                                placeholder="Search locations..."
-                                className="bg-white text-black"
-                                onValueChange={fetchLocationSuggestions}
-                            />
-                            <CommandList className="bg-white max-h-full">
-                                {isLoadingLocations ? (
-                                    <div className="py-6 text-center text-sm text-gray-500">Loading...</div>
-                                ) : locationOptions.length === 0 ? (
-                                    <CommandEmpty className="text-gray-500">No locations found.</CommandEmpty>
-                                ) : (
-                                    <CommandGroup className="bg-white">
-                                        {locationOptions.map((option) => (
-                                            <CommandItem
-                                                key={option.value}
-                                                value={option.value}
-                                                onSelect={() => {
-                                                    setLocation(option.value)
-                                                    setIsLocationSheetOpen(false)
-                                                }}
-                                                className="cursor-pointer hover:bg-gray-100 text-black"
-                                            >
-                                                <Check
-                                                    className={cn(
-                                                        "mr-2 h-4 w-4",
-                                                        location === option.value ? "opacity-100" : "opacity-0"
-                                                    )}
-                                                />
-                                                {option.label}
-                                            </CommandItem>
-                                        ))}
-                                    </CommandGroup>
-                                )}
-                            </CommandList>
-                        </Command>
-                    </div>
-                </SheetContent>
-            </Sheet>
         </div>
     )
 }
