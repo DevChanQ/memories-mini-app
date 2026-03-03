@@ -123,9 +123,6 @@ export default function StampPreview({
     if (!handle) {
         handle = 'Your Handle'
     }
-    if (!handle.startsWith('@')) {
-        handle = `${handle}`.replace('@', '')
-    }
     if (!headline) {
         headline = 'Your Memory'
     }
@@ -189,9 +186,7 @@ export default function StampPreview({
                         // Constrain width to effective visible area and center the text section
                         width: effectiveWidth ? `${effectiveWidth}px` : '100%',
                         margin: effectiveWidth ? '0 auto' : undefined,
-                        padding: layout === 'horizontal' 
-                            ? `${2 * contentScale}rem ${2.5 * contentScale}rem`
-                            : `${2 * contentScale}rem ${2.5 * contentScale}rem`,
+                        padding: `max(calc(var(--stamp-scale) * 2rem), 32px) max(calc(var(--stamp-scale) * 2.5rem), 32px)`,
                     }}
                 >
                     <div className={cn("space-y-4", layout === 'horizontal' && 'space-y-2')}>
@@ -208,8 +203,8 @@ export default function StampPreview({
                                 )}
                                 style={!size ? {
                                     fontSize: layout === 'horizontal' 
-                                        ? `${4.5 * contentScale}rem`  // ~text-7xl equivalent
-                                        : `${3.75 * contentScale}rem`, // ~text-6xl equivalent
+                                        ? `calc(var(--stamp-scale) * 4.5rem)`  // ~text-7xl equivalent
+                                        : `calc(var(--stamp-scale) * 3.75rem)`, // ~text-6xl equivalent
                                 } : undefined}
                             >
                                 {headline}
@@ -223,15 +218,15 @@ export default function StampPreview({
                         {/* Header with location and handle */}
                         <div 
                             className={cn("flex items-center justify-start")}
-                            style={{ gap: `${1 * contentScale}rem` }}
+                            style={{ gap: `calc(var(--stamp-scale) * 1rem)` }}
                         >
                             <div 
                                 className="flex items-center max-w-1/2 w-full"
-                                style={{ gap: `${0.25 * contentScale}rem`, fontSize: `${0.75 * contentScale}rem` }}
+                                style={{ gap: `calc(var(--stamp-scale) * 0.25rem)`, fontSize: `calc(var(--stamp-scale) * 0.75rem)` }}
                             >
                                 <svg 
                                     className="flex-shrink-0" 
-                                    style={{ width: `${0.75 * contentScale}rem`, height: `${0.75 * contentScale}rem` }}
+                                    style={{ width: `calc(var(--stamp-scale) * 0.75rem)`, height: `calc(var(--stamp-scale) * 0.75rem)` }}
                                     fill="currentColor" 
                                     viewBox="0 0 20 20" 
                                     onClick={() => document.getElementById("location-text")?.focus()}
@@ -248,9 +243,9 @@ export default function StampPreview({
                             </div>
                             <div 
                                 className="relative max-w-1/2 w-full flex items-start"
-                                style={{ fontSize: `${0.75 * contentScale}rem` }}
+                                style={{ fontSize: `calc(var(--stamp-scale) * 0.75rem)` }}
                             >
-                                <span onClick={() => document.getElementById("handle-text")?.focus()} className="font-light">{handle.startsWith("@") ? "" : "@"}</span>
+                                {/* <span onClick={() => document.getElementById("handle-text")?.focus()} className="font-light">{handle.startsWith("@") ? "" : "@"}</span> */}
                                 <span
                                     // contentEditable
                                     id="handle-text"
@@ -264,23 +259,23 @@ export default function StampPreview({
 
 
                     {/* Footer with branding */}
-                    <div 
-                        className={cn("flex items-end justify-between")}
-                        style={{
-                            gap: `${1 * contentScale}rem`,
-                            marginTop: `${1.5 * contentScale}rem`,
-                        }}
-                    >
+                        <div 
+                            className={cn("flex items-end justify-between")}
+                            style={{
+                                gap: `calc(var(--stamp-scale) * 1rem)`,
+                                marginTop: `calc(var(--stamp-scale) * 1.5rem)`,
+                            }}
+                        >
                         <div className="space-y-1">
                             <p 
                                 className="tracking-wide uppercase leading-tight"
-                                style={{ fontSize: `${8 * contentScale}px` }}
+                                    style={{ fontSize: `calc(var(--stamp-scale) * 8px)` }}
                             >
                                 Your memories deserve forever
                             </p>
                             <div
                                 className="underline underline-offset-2 tracking-wide uppercase block"
-                                style={{ fontSize: `${8 * contentScale}px` }}
+                                    style={{ fontSize: `calc(var(--stamp-scale) * 8px)` }}
                             >
                                 onememory.xyz
                             </div>
@@ -293,9 +288,9 @@ export default function StampPreview({
                             className="relative"
                             style={{
                                 height: layout === 'horizontal' 
-                                    ? `${2 * contentScale}rem` 
-                                    : `${2.5 * contentScale}rem`,
-                                top: layout === 'horizontal' ? 0 : `${0.25 * contentScale}rem`,
+                                    ? `calc(var(--stamp-scale) * 2rem)` 
+                                    : `calc(var(--stamp-scale) * 2.5rem)`,
+                                top: layout === 'horizontal' ? 0 : `calc(var(--stamp-scale) * 0.25rem)`,
                             }}
                         />
                     </div>
@@ -371,14 +366,14 @@ export default function StampPreview({
                         className="absolute text-white font-semibold tracking-wider z-10"
                         style={{
                             right: layout === 'horizontal' 
-                                ? `${2 * contentScale}rem` 
-                                : `${3 * contentScale}rem`,
+                                ? `calc(var(--stamp-scale) * 2rem)` 
+                                : `calc(var(--stamp-scale) * 3rem)`,
                             bottom: layout === 'horizontal' 
-                                ? `${2 * contentScale}rem` 
-                                : `${3 * contentScale}rem`,
+                                ? `calc(var(--stamp-scale) * 2rem)` 
+                                : `calc(var(--stamp-scale) * 3rem)`,
                             fontSize: layout === 'horizontal' 
-                                ? `${1 * contentScale}rem` 
-                                : `${1.125 * contentScale}rem`,
+                                ? `calc(var(--stamp-scale) * 1rem)` 
+                                : `calc(var(--stamp-scale) * 1.125rem)`,
                             writingMode: 'vertical-rl',
                             textOrientation: 'mixed',
                             letterSpacing: '0.2em',

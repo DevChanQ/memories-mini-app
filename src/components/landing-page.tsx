@@ -261,7 +261,7 @@ const LandingPage: React.FC = () => {
                 imageUrl: '',
                 title: 'Your first memory',
                 location: 'ANYWHERE, EARTH',
-                handle: '@YOU',
+                handle: 'YOU',
                 date: 'TODAY'
             },
             {
@@ -269,7 +269,7 @@ const LandingPage: React.FC = () => {
                 imageUrl: '',
                 title: 'Your first memory',
                 location: 'ANYWHERE, EARTH',
-                handle: '@YOU',
+                handle: 'YOU',
                 date: 'TODAY'
             }
         ]
