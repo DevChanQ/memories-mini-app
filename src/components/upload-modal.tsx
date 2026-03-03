@@ -558,7 +558,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload, in
                 disabled={isProcessing}
             />
             <div className={cn(
-                "bg-gradient-to-br overflow-scroll from-white via-white flex flex-col h-full to-purple-50 shadow-2xl relative rounded-lg !font-montserrat",
+                "relative bg-gradient-to-br overflow-scroll from-white via-white flex flex-col h-full to-purple-50 shadow-2xl rounded-lg !font-montserrat",
                 isMobile ? "p-4 gap-4 max-w-full my-auto rounded-none" : "p-6 gap-6 max-w-xl max-h-[90vh] overflow-y-auto rounded-r-none"
             )}>
                 <button
