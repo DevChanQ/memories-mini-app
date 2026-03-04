@@ -46,6 +46,14 @@ const presetMemories: MemoryData[] = [
         location: 'SEATTLE, USA',
         handle: 'MEMORIES',
         date: 'APRIL 2025'
+    },
+    {
+        id: 'preset-friends-pizza',
+        imageUrl: '/friends-pizza.jpg',
+        title: 'Pizza & Chill with friends',
+        location: 'BROOKLYN, USA',
+        handle: 'MEMORIES',
+        date: 'OCT 2025'
     }
 ]
 
@@ -385,7 +393,7 @@ const LandingPage: React.FC = () => {
                             ) : randomMemories.length >= 2 ? (
                                 <>
                                     {/* First postcard - back layer */}
-                                    <div className="absolute w-full transform -rotate-5 -translate-x-10 md:-rotate-10 md:-translate-x-20 md:translate-y-5 translate-y-5 opacity-90 hover:opacity-80 transition-all duration-300 cursor-pointer" onClick={() => navigate(`/view/${randomMemories[0].id}`)}>
+                                    <div className="absolute w-full transform -rotate-5 -translate-x-10 md:-rotate-10 md:-translate-x-20 md:translate-y-5 translate-y-5 opacity-90 hover:opacity-80 transition-all duration-300">
                                         <StampPreview
                                             headline={randomMemories[0].title}
                                             location={randomMemories[0].location}
@@ -397,7 +405,7 @@ const LandingPage: React.FC = () => {
                                     </div>
 
                                     {/* Second postcard - front layer */}
-                                    <div className="relative transform rotate-2 -translate-x-3 hover:rotate-0 transition-transform duration-300 cursor-pointer" onClick={() => navigate(`/view/${randomMemories[1].id}`)}>
+                                    <div className="relative transform rotate-2 -translate-x-3 hover:rotate-0 transition-transform duration-300">
                                         <StampPreview
                                             headline={randomMemories[1].title}
                                             location={randomMemories[1].location}
