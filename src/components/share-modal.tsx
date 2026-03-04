@@ -3,6 +3,8 @@ import { X, Twitter } from 'lucide-react'
 import { Button } from './ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { useIsMobile } from '../hooks/use-mobile'
+import ArweaveImage from './arweave-image'
+import { buildArweaveTransactionUrl } from '@/lib/arweave-gateway'
 
 interface ShareModalProps {
     isOpen: boolean
@@ -18,7 +20,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, imageId, image
 
     const handleShareOnX = () => {
         const tweetText = "I just preserved my most cherished memory on Arweave"
-        const arweaveUrl = `https://arweave.net/${imageId}`
+        const arweaveUrl = buildArweaveTransactionUrl(imageId)
         const websiteUrl = "onememory.xyz"
 
         const fullTweetText = `${tweetText} at ${arweaveUrl}`
@@ -62,7 +64,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, imageId, image
                         {imageUrl ? (
                             <div className="space-y-3">
                                 <div className="relative mx-auto w-fit">
-                                    <img
+                                    <ArweaveImage
                                         src={imageUrl}
                                         alt={imageTitle || "Uploaded memory"}
                                         className={`rounded-lg shadow-lg object-contain ${isMobile ? 'max-w-[280px] max-h-[350px]' : 'max-w-[350px] max-h-[450px]'}`}

@@ -7,6 +7,7 @@ import { Button } from "./ui/button";
 import { ImageUp, Upload, Loader2 } from "lucide-react";
 import { Input } from "./ui/input";
 import { useRef, useEffect, useState } from "react";
+import ArweaveImage from "./arweave-image";
 
 interface StampPreviewProps {
     headline: string;
@@ -336,7 +337,7 @@ export default function StampPreview({
                         </div>
                     ) : imageSrc ? (
                         <>
-                            <img
+                            <ArweaveImage
                                 src={imageSrc}
                                 alt={headline}
                                 className="absolute inset-0 bg-white w-full h-full object-cover object-center"

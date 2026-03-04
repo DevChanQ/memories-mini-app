@@ -9,6 +9,7 @@ import StampPreview from './stamp-preview'
 import StampCaptureRenderer from './stamp-capture-renderer'
 import { useStampCaptureShare } from '../hooks/use-stamp-capture-share'
 import { getMemoryShareUrl, getMemoryTweetText } from '../utils/share'
+import { buildArweaveTransactionUrl, fetchWithGatewayFallback } from '@/lib/arweave-gateway'
 
 interface MemoryData {
     id: string
@@ -63,7 +64,7 @@ const UploadedPage: React.FC = () => {
             setError(null)
 
             // Fetch transaction metadata from Arweave
-            const response = await fetch(`https://arweave.net/graphql`, {
+            const { response } = await fetchWithGatewayFallback('/graphql', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -108,7 +109,7 @@ const UploadedPage: React.FC = () => {
                 location: tags.Location || '',
                 handle: tags.Handle || '',
                 description: tags.Description || '',
-                imageUrl: `https://arweave.net/${transaction.id}`,
+                imageUrl: buildArweaveTransactionUrl(transaction.id),
                 isPublic: tags.Visibility === 'Public'
             }
 
@@ -119,7 +120,7 @@ const UploadedPage: React.FC = () => {
                 location: tags.Location || '',
                 handle: tags.Handle || '',
                 description: tags.Description || '',
-                imageUrl: `https://arweave.net/${transaction.id}`,
+                imageUrl: buildArweaveTransactionUrl(transaction.id),
                 date: new Date().toISOString(),
                 txid: transaction.id
             }

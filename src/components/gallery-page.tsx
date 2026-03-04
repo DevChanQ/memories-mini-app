@@ -17,6 +17,7 @@ import { QuickWallet } from 'quick-wallet'
 import permanent from "@/assets/permanent-light.png"
 import { cn } from '@/lib/utils'
 import { trackUploadFailed, trackUploadSucceeded } from '@/lib/analytics'
+import { buildArweaveTransactionUrl, fetchWithGatewayFallback, isLikelyImageContentType, validateArweaveImageWithFallback } from '@/lib/arweave-gateway'
 
 // GraphQL query for fetching Arweave transactions
 const MEMORIES_QUERY = `query GetMemories($after: String) {
@@ -66,20 +67,19 @@ interface GraphQLResponse {
 
 // Function to fetch memories from Arweave
 const fetchMemories = async (cursor?: string): Promise<GraphQLResponse> => {
-    const response = await fetch('https://arweave.net/graphql', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            query: MEMORIES_QUERY,
-            variables: cursor ? { after: cursor } : {}
-        })
-    })
-
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-    }
+    const { response } = await fetchWithGatewayFallback(
+        '/graphql',
+        {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                query: MEMORIES_QUERY,
+                variables: cursor ? { after: cursor } : {}
+            })
+        }
+    )
 
     return response.json()
 }
@@ -122,13 +122,19 @@ async function uploadFileTurbo(file: File, api: any, tags: { name: string, value
 }
 
 // Function to check if a URL is a valid image
-const isValidImageUrl = async (url: string): Promise<boolean> => {
+const getValidImageUrl = async (url: string): Promise<string | null> => {
     try {
-        const response = await fetch(url, { method: 'HEAD' })
-        const contentType = response.headers.get('content-type')
-        return contentType ? contentType.startsWith('image/') : false
+        const { url: resolvedUrl } = await fetchWithGatewayFallback(
+            url,
+            { method: 'HEAD', cache: 'no-cache' },
+            {
+                shouldAccept: (response) => response.ok && isLikelyImageContentType(response.headers.get('content-type'))
+            }
+        )
+
+        return resolvedUrl
     } catch {
-        return false
+        return null
     }
 }
 
@@ -254,14 +260,14 @@ const GalleryPage: React.FC = () => {
                 const isImageContentType = contentType && contentType.startsWith('image/')
 
                 if (isImageContentType) {
-                    const url = `https://arweave.net/${transaction.id}`
+                    const url = buildArweaveTransactionUrl(transaction.id)
 
                     // Double-check by validating the actual URL
-                    const isValidImage = await isValidImageUrl(url)
+                    const validImageUrl = await getValidImageUrl(url)
 
-                    if (isValidImage) {
+                    if (validImageUrl) {
                         arweaveImageMap.set(transaction.id, {
-                            url,
+                            url: validImageUrl,
                             title: tags.Title || tags.Name || `Memory ${arweaveMemories.length + index + 1}`,
                             location: tags.Location,
                             description: tags.Description,
@@ -520,39 +526,9 @@ const GalleryPage: React.FC = () => {
 
     // Validate that the image is accessible on Arweave
     const validateArweaveImage = async (transactionId: string, maxRetries = 10, retryDelay = 3000): Promise<boolean> => {
-        for (let attempt = 1; attempt <= maxRetries; attempt++) {
-            try {
-                console.log(`Validating Arweave image (attempt ${attempt}/${maxRetries}): ${transactionId}`)
-
-                const response = await fetch(`https://arweave.net/${transactionId}`, {
-                    method: 'HEAD',
-                    cache: 'no-cache'
-                })
-
-                if (response.ok) {
-                    const contentType = response.headers.get('content-type')
-                    if (contentType && contentType.startsWith('image/')) {
-                        console.log('✅ Image successfully validated on Arweave')
-                        return true
-                    } else {
-                        console.log('❌ Response is not an image, content-type:', contentType)
-                    }
-                } else {
-                    console.log(`❌ HTTP ${response.status}: ${response.statusText}`)
-                }
-            } catch (error) {
-                console.log(`❌ Validation attempt ${attempt} failed:`, error)
-            }
-
-            // Wait before retrying (except on the last attempt)
-            if (attempt < maxRetries) {
-                console.log(`⏳ Waiting ${retryDelay}ms before retry...`)
-                await new Promise(resolve => setTimeout(resolve, retryDelay))
-            }
-        }
-
-        console.log('❌ Failed to validate image after all attempts')
-        return false
+        console.log(`Validating Arweave image with gateway fallback: ${transactionId}`)
+        const result = await validateArweaveImageWithFallback(transactionId, maxRetries, retryDelay)
+        return result.isValid
     }
 
     // Handle image upload

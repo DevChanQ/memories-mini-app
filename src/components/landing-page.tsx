@@ -12,6 +12,7 @@ import StampPreview from './stamp-preview'
 import { QuickWallet } from 'quick-wallet'
 import { loadNSFWModel } from '@/lib/nsfw'
 import { trackUploadFailed, trackUploadSucceeded } from '@/lib/analytics'
+import { validateArweaveImageWithFallback } from '@/lib/arweave-gateway'
 
 interface MemoryData {
     id: string
@@ -173,39 +174,9 @@ const LandingPage: React.FC = () => {
 
     // Function to validate that the image is accessible on Arweave
     const validateArweaveImage = async (transactionId: string, maxRetries = 10, retryDelay = 3000): Promise<boolean> => {
-        for (let attempt = 1; attempt <= maxRetries; attempt++) {
-            try {
-                console.log(`Validating Arweave image (attempt ${attempt}/${maxRetries}): ${transactionId}`)
-
-                const response = await fetch(`https://arweave.net/${transactionId}`, {
-                    method: 'HEAD',
-                    cache: 'no-cache'
-                })
-
-                if (response.ok) {
-                    const contentType = response.headers.get('content-type')
-                    if (contentType && contentType.startsWith('image/')) {
-                        console.log('✅ Image successfully validated on Arweave')
-                        return true
-                    } else {
-                        console.log('❌ Response is not an image, content-type:', contentType)
-                    }
-                } else {
-                    console.log(`❌ HTTP ${response.status}: ${response.statusText}`)
-                }
-            } catch (error) {
-                console.log(`❌ Validation attempt ${attempt} failed:`, error)
-            }
-
-            // Wait before retrying (except on the last attempt)
-            if (attempt < maxRetries) {
-                console.log(`⏳ Waiting ${retryDelay}ms before retry...`)
-                await new Promise(resolve => setTimeout(resolve, retryDelay))
-            }
-        }
-
-        console.log('❌ Failed to validate image after all attempts')
-        return false
+        console.log(`Validating Arweave image with gateway fallback: ${transactionId}`)
+        const result = await validateArweaveImageWithFallback(transactionId, maxRetries, retryDelay)
+        return result.isValid
     }
 
     const handleModalUpload = async (uploadData: UploadData) => {
