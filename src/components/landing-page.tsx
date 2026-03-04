@@ -22,6 +22,33 @@ interface MemoryData {
     date: string
 }
 
+const presetMemories: MemoryData[] = [
+    {
+        id: 'preset-birthday',
+        imageUrl: '/birthday.jpg',
+        title: 'Birthday with friends',
+        location: 'AUSTIN, USA',
+        handle: 'MEMORIES',
+        date: 'JUNE 2025'
+    },
+    {
+        id: 'preset-camping',
+        imageUrl: '/camping.jpg',
+        title: 'Weekend camping trip',
+        location: 'YOSEMITE, USA',
+        handle: 'MEMORIES',
+        date: 'SEPT 2025'
+    },
+    {
+        id: 'preset-wedding',
+        imageUrl: '/wedding.jpg',
+        title: 'Wedding day',
+        location: 'SEATTLE, USA',
+        handle: 'MEMORIES',
+        date: 'APRIL 2025'
+    }
+]
+
 
 const compressionOptions = {
     maxSizeMB: 0.1, // Hard limit of 100KB
@@ -272,28 +299,22 @@ const LandingPage: React.FC = () => {
         navigate('/gallery')
     }, [navigate])
 
-    // Use two static placeholder stamps instead of fetching from Arweave
+    // Use preset memories and randomize the front card on each landing load
     useEffect(() => {
-        const placeholders: MemoryData[] = [
-            {
-                id: 'placeholder-1',
-                imageUrl: '',
-                title: 'Your first memory',
-                location: 'ANYWHERE, EARTH',
-                handle: 'YOU',
-                date: 'TODAY'
-            },
-            {
-                id: 'placeholder-2',
-                imageUrl: '',
-                title: 'Your first memory',
-                location: 'ANYWHERE, EARTH',
-                handle: 'YOU',
-                date: 'TODAY'
-            }
-        ]
+        if (presetMemories.length === 0) {
+            setRandomMemories([])
+            setIsLoadingMemories(false)
+            return
+        }
 
-        setRandomMemories(placeholders)
+        const frontIndex = Math.floor(Math.random() * presetMemories.length)
+        const frontMemory = presetMemories[frontIndex]
+        const remainingMemories = presetMemories.filter((_, index) => index !== frontIndex)
+        const backMemory = remainingMemories.length > 0
+            ? remainingMemories[Math.floor(Math.random() * remainingMemories.length)]
+            : null
+
+        setRandomMemories(backMemory ? [backMemory, frontMemory] : [frontMemory])
         setIsLoadingMemories(false)
     }, [])
 
