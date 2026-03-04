@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 import StampPreview from './stamp-preview'
 import { QuickWallet } from 'quick-wallet'
 import { loadNSFWModel } from '@/lib/nsfw'
+import { trackUploadFailed, trackUploadSucceeded } from '@/lib/analytics'
 
 interface MemoryData {
     id: string
@@ -175,6 +176,8 @@ const LandingPage: React.FC = () => {
     const handleModalUpload = async (uploadData: UploadData) => {
 
         setIsUploading(true)
+        const uploadStartedAt = Date.now()
+        let uploadStage: 'upload' | 'validation' = 'upload'
 
         try {
             console.log('Upload data:', uploadData)
@@ -188,10 +191,17 @@ const LandingPage: React.FC = () => {
             }
 
             // Validate that the image is accessible on Arweave before navigating
+            uploadStage = 'validation'
             console.log('🔍 Validating image accessibility on Arweave...')
             const isValid = await validateArweaveImage(id)
 
             if (isValid) {
+                trackUploadSucceeded({
+                    memoryId: id,
+                    surface: 'landing',
+                    durationMs: Date.now() - uploadStartedAt,
+                    isPublic: uploadData.isPublic,
+                })
                 console.log('✅ Image validated successfully, navigating to view page')
                 // Close modal before navigating
                 setIsUploadModalOpen(false)
@@ -202,6 +212,11 @@ const LandingPage: React.FC = () => {
             }
         } catch (error) {
             console.error('Upload failed:', error)
+            trackUploadFailed({
+                surface: 'landing',
+                stage: uploadStage,
+                errorMessage: error instanceof Error ? error.message : 'Unknown upload error',
+            })
             // You might want to show a user-friendly error message here
             alert(error instanceof Error ? error.message : 'Upload failed. Please try again.')
         } finally {
@@ -444,6 +459,7 @@ const LandingPage: React.FC = () => {
                 }}
                 onUpload={handleModalUpload}
                 initialFile={initialFile}
+                uploadSurface='landing'
             />
 
             <div className='absolute bottom-2 left-2 z-20 flex items-center text-muted-foreground/80'>

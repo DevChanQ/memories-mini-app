@@ -39,7 +39,11 @@ const UploadedPage: React.FC = () => {
         hiddenVerticalRef,
         isCapturing,
         isSharePopupOpen,
-    } = useStampCaptureShare({ captureLayout: isMobile ? 'vertical' : 'horizontal' })
+    } = useStampCaptureShare({
+        captureLayout: isMobile ? 'vertical' : 'horizontal',
+        memoryId: transactionId,
+        shareSurface: 'uploaded_page',
+    })
 
     useEffect(() => {
         if (!transactionId) {
@@ -364,6 +368,8 @@ const UploadedPage: React.FC = () => {
                 polaroidBlob={capturedBlob}
                 tweetText={getTweetText()}
                 onTwitterOpen={handleSharePopupClose}
+                memoryId={memoryData.id}
+                shareSurface='uploaded_page'
             />
         </div>
     )

@@ -1,7 +1,7 @@
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { ThemeProvider } from '@/components/theme-provider.tsx'
-import { BrowserRouter, HashRouter, Route, Routes } from "react-router"
+import { HashRouter, Route, Routes, useLocation } from "react-router"
 import { ArweaveWalletKit } from "@arweave-wallet-kit/react"
 import WanderStrategy from "@arweave-wallet-kit/wander-strategy"
 import WAuthStrategy from "@wauth/strategy"
@@ -19,6 +19,22 @@ import QuickWalletStrategy from '@vela-ventures/quick-wallet-strategy'
 import { useEffect } from 'react'
 import { Toaster } from './components/ui/sonner'
 import { PostHogProvider } from "posthog-js/react"
+import { initializeSessionAttribution, trackPageView } from './lib/analytics'
+
+function AnalyticsTracker() {
+  const location = useLocation()
+
+  useEffect(() => {
+    initializeSessionAttribution()
+  }, [])
+
+  useEffect(() => {
+    const route = `${location.pathname}${location.search}${location.hash}`
+    trackPageView(route)
+  }, [location.pathname, location.search, location.hash])
+
+  return null
+}
 
 function Main() {
   QuickWallet.connect()
@@ -50,6 +66,7 @@ function Main() {
     <ThemeProvider defaultTheme="dark">
       <Toaster position="top-center" richColors />
       <HashRouter>
+        <AnalyticsTracker />
         <Routes>
           <Route index element={<App />} />
           <Route path='gallery' element={<GalleryPage />} />

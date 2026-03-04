@@ -34,7 +34,11 @@ const ListViewComponent: React.FC<ListViewProps> = ({ items, onImageClick }) => 
         hiddenVerticalRef,
         isCapturing,
         isSharePopupOpen,
-    } = useStampCaptureShare({ captureLayout: isMobile ? 'horizontal' : 'vertical' })
+    } = useStampCaptureShare({
+        captureLayout: isMobile ? 'horizontal' : 'vertical',
+        memoryId: selectedItem?.id,
+        shareSurface: 'list_view',
+    })
 
     // Auto-select first item on desktop
     useEffect(() => {
@@ -455,6 +459,8 @@ const ListViewComponent: React.FC<ListViewProps> = ({ items, onImageClick }) => 
                 polaroidBlob={capturedBlob}
                 tweetText={getTweetText()}
                 onTwitterOpen={handleSharePopupClose}
+                memoryId={selectedItem?.id}
+                shareSurface='list_view'
             />
         </div>
     )

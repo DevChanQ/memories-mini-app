@@ -31,7 +31,11 @@ const ImageModal: React.FC<ImageModalProps> = ({ item, isOpen, onClose }) => {
         hiddenVerticalRef,
         isCapturing,
         isSharePopupOpen,
-    } = useStampCaptureShare({ captureLayout: orientation })
+    } = useStampCaptureShare({
+        captureLayout: orientation,
+        memoryId: item?.id,
+        shareSurface: 'image_modal',
+    })
 
     // Handle animation states
     useEffect(() => {
@@ -220,6 +224,8 @@ const ImageModal: React.FC<ImageModalProps> = ({ item, isOpen, onClose }) => {
                 tweetText={getTweetText()}
                 shareUrl={getShareUrl()}
                 onTwitterOpen={handleSharePopupClose}
+                memoryId={item.id}
+                shareSurface='image_modal'
             />
         </div>
     )

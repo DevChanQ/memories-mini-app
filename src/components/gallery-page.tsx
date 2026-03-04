@@ -16,6 +16,7 @@ import { ArconnectSigner, TurboFactory } from '@ardrive/turbo-sdk/web'
 import { QuickWallet } from 'quick-wallet'
 import permanent from "@/assets/permanent-light.png"
 import { cn } from '@/lib/utils'
+import { trackUploadFailed, trackUploadSucceeded } from '@/lib/analytics'
 
 // GraphQL query for fetching Arweave transactions
 const MEMORIES_QUERY = `query GetMemories($after: String) {
@@ -599,6 +600,8 @@ const GalleryPage: React.FC = () => {
     const handleModalUpload = async (uploadData: UploadData) => {
 
         setIsUploading(true)
+        const uploadStartedAt = Date.now()
+        let uploadStage: 'upload' | 'validation' = 'upload'
 
         try {
             console.log('Upload data:', uploadData)
@@ -612,10 +615,17 @@ const GalleryPage: React.FC = () => {
             }
 
             // Validate that the image is accessible on Arweave before navigating
+            uploadStage = 'validation'
             console.log('🔍 Validating image accessibility on Arweave...')
             const isValid = await validateArweaveImage(id)
 
             if (isValid) {
+                trackUploadSucceeded({
+                    memoryId: id,
+                    surface: 'gallery',
+                    durationMs: Date.now() - uploadStartedAt,
+                    isPublic: uploadData.isPublic,
+                })
                 console.log('✅ Image validated successfully, navigating to view page')
                 // Close modal before navigating
                 setIsUploadModalOpen(false)
@@ -626,6 +636,11 @@ const GalleryPage: React.FC = () => {
             }
         } catch (error) {
             console.error('Upload failed:', error)
+            trackUploadFailed({
+                surface: 'gallery',
+                stage: uploadStage,
+                errorMessage: error instanceof Error ? error.message : 'Unknown upload error',
+            })
             alert(error instanceof Error ? error.message : 'Upload failed. Please try again.')
         } finally {
             setIsUploading(false)
@@ -832,6 +847,7 @@ const GalleryPage: React.FC = () => {
                 }}
                 onUpload={handleModalUpload}
                 initialFile={initialFile}
+                uploadSurface='gallery'
             />
 
         </div >

@@ -3,6 +3,7 @@ import { Check, Twitter, Copy, X, Send, MessageCircle, Share2, Instagram } from 
 import { Button } from './ui/button'
 import { Card, CardContent } from './ui/card'
 import { useIsMobile } from '../hooks/use-mobile'
+import { trackSharePlatformOpened, type ShareSurface } from '@/lib/analytics'
 
 interface CopySharePopupProps {
     isOpen: boolean
@@ -12,6 +13,8 @@ interface CopySharePopupProps {
     tweetText: string
     shareUrl: string
     onTwitterOpen?: () => void
+    memoryId?: string
+    shareSurface?: ShareSurface
 }
 
 const CopySharePopup: React.FC<CopySharePopupProps> = ({
@@ -21,7 +24,9 @@ const CopySharePopup: React.FC<CopySharePopupProps> = ({
     polaroidBlob,
     tweetText,
     shareUrl,
-    onTwitterOpen
+    onTwitterOpen,
+    memoryId,
+    shareSurface,
 }) => {
     const isMobile = useIsMobile()
     const [status, setStatus] = useState<'select' | 'copying' | 'copied' | 'countdown' | 'error'>('select')
@@ -119,6 +124,15 @@ const CopySharePopup: React.FC<CopySharePopupProps> = ({
             const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(tweetText)}`
             window.open(whatsappUrl, '_blank', 'noopener,noreferrer')
         }
+
+        if (shareSurface) {
+            trackSharePlatformOpened({
+                memoryId,
+                surface: shareSurface,
+                platform,
+            })
+        }
+
         onClose()
     }
 
@@ -144,6 +158,15 @@ const CopySharePopup: React.FC<CopySharePopupProps> = ({
 
             if (navigator.canShare && navigator.canShare(shareData)) {
                 await navigator.share(shareData)
+
+                if (shareSurface) {
+                    trackSharePlatformOpened({
+                        memoryId,
+                        surface: shareSurface,
+                        platform: 'native',
+                    })
+                }
+
                 onClose()
             } else {
                 setStatus('error')

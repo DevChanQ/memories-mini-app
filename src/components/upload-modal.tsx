@@ -34,12 +34,14 @@ import {
 import { Link } from 'react-router'
 import { Textarea } from './ui/textarea'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible'
+import { trackUploadSubmitted, type UploadSurface } from '@/lib/analytics'
 
 interface UploadModalProps {
     isOpen: boolean
     onClose: () => void
     onUpload?: (data: UploadData) => void
     initialFile?: File | null
+    uploadSurface: UploadSurface
 }
 
 export interface UploadData {
@@ -68,7 +70,7 @@ const LOCATION_OPTIONS = [
     { value: 'Reykjavik, Iceland', label: 'Reykjavik, Iceland' }
 ]
 
-const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload, initialFile }) => {
+const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload, initialFile, uploadSurface }) => {
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
     const [title, setTitle] = useState('')
@@ -496,6 +498,20 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload, in
         const hasValidTitle = title.trim() && title !== defaultTitle
         const hasValidLocation = location.trim() && location.toUpperCase() !== defaultLocation
         const hasValidHandle = handle.trim() && handle !== defaultHandle
+        const hasDescription = description.trim().length > 0
+        const hasDatetime = Boolean(datetime)
+        const isBaseValid = Boolean(selectedFile && hasValidTitle && hasValidLocation && hasValidHandle)
+
+        trackUploadSubmitted({
+            surface: uploadSurface,
+            isValid: isBaseValid && description.length <= MAX_DESCRIPTION_LENGTH,
+            fileType: selectedFile?.type,
+            fileSizeBytes: selectedFile?.size,
+            hasDescription,
+            hasDatetime,
+            isPublic,
+            blockedReason: blockedReason || undefined,
+        })
 
         if (!selectedFile || !hasValidTitle || !hasValidLocation || !hasValidHandle) {
             setUploadError('Please fill in all fields: title, location, and handle')

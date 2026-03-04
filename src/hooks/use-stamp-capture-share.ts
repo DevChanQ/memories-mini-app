@@ -1,13 +1,16 @@
 import { useCallback, useRef, useState } from 'react'
 import { domToBlob } from 'modern-screenshot'
+import { trackShareClipboardResult, trackShareInitiated, type ShareSurface } from '@/lib/analytics'
 
 type StampLayout = 'horizontal' | 'vertical'
 
 interface UseStampCaptureShareOptions {
     captureLayout: StampLayout
+    memoryId?: string
+    shareSurface?: ShareSurface
 }
 
-export const useStampCaptureShare = ({ captureLayout }: UseStampCaptureShareOptions) => {
+export const useStampCaptureShare = ({ captureLayout, memoryId, shareSurface }: UseStampCaptureShareOptions) => {
     const [isSharePopupOpen, setIsSharePopupOpen] = useState(false)
     const [isCapturing, setIsCapturing] = useState(false)
     const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null)
@@ -94,6 +97,13 @@ export const useStampCaptureShare = ({ captureLayout }: UseStampCaptureShareOpti
     }, [captureLayout])
 
     const handleShare = useCallback(async () => {
+        if (shareSurface) {
+            trackShareInitiated({
+                memoryId,
+                surface: shareSurface,
+            })
+        }
+
         setIsSharePopupOpen(true)
         const blob = await captureStampAsImage()
 
@@ -107,13 +117,30 @@ export const useStampCaptureShare = ({ captureLayout }: UseStampCaptureShareOpti
                             'image/png': blob
                         })
                     ])
+
+                    if (shareSurface) {
+                        trackShareClipboardResult({
+                            memoryId,
+                            surface: shareSurface,
+                            success: true,
+                        })
+                    }
                 }
             } catch (error) {
                 console.error('Failed to copy image to clipboard:', error)
+
+                if (shareSurface) {
+                    trackShareClipboardResult({
+                        memoryId,
+                        surface: shareSurface,
+                        success: false,
+                        errorMessage: error instanceof Error ? error.message : 'Clipboard copy failed',
+                    })
+                }
             }
         }
 
-    }, [captureStampAsImage])
+    }, [captureStampAsImage, memoryId, shareSurface])
 
     const handleSharePopupClose = useCallback(() => {
         setIsSharePopupOpen(false)
