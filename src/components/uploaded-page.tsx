@@ -9,7 +9,7 @@ import StampPreview from './stamp-preview'
 import StampCaptureRenderer from './stamp-capture-renderer'
 import { useStampCaptureShare } from '../hooks/use-stamp-capture-share'
 import { getMemoryShareUrl, getMemoryTweetText } from '../utils/share'
-import { buildArweaveTransactionUrl, fetchWithGatewayFallback } from '@/lib/arweave-gateway'
+import { buildArweaveTransactionUrl, fetchGraphqlWithGatewayFallback } from '@/lib/arweave-gateway'
 
 interface MemoryData {
     id: string
@@ -34,7 +34,7 @@ const UploadedPage: React.FC = () => {
     const {
         capturedBlob,
         captureStampAsImage,
-        handleShare: handleShareFromHook,
+        handleShare,
         handleSharePopupClose,
         hiddenHorizontalRef,
         hiddenVerticalRef,
@@ -64,29 +64,27 @@ const UploadedPage: React.FC = () => {
             setError(null)
 
             // Fetch transaction metadata from Arweave
-            const { response } = await fetchWithGatewayFallback('/graphql', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    query: `
-                        query GetTransaction($id: ID!) {
-                            transaction(id: $id) {
-                                id
-                                tags {
-                                    name
-                                    value
-                                }
-                            }
+            const query = `
+                query GetTransaction($id: ID!) {
+                    transaction(id: $id) {
+                        id
+                        tags {
+                            name
+                            value
                         }
-                    `,
-                    variables: { id: transactionId }
-                })
-            })
+                    }
+                }
+            `
 
-            const data = await response.json()
-            const transaction = data.data?.transaction
+            const { data } = await fetchGraphqlWithGatewayFallback<{ transaction: { id: string; tags: { name: string; value: string }[] } | null }>(
+                query,
+                { id: transactionId },
+                {
+                    validateData: (graphqlData) => !!graphqlData?.transaction
+                }
+            )
+
+            const transaction = data.transaction
 
             if (!transaction) {
                 throw new Error('Transaction not found')
@@ -133,10 +131,6 @@ const UploadedPage: React.FC = () => {
         } finally {
             setIsLoading(false)
         }
-    }
-
-    const handleShare = async () => {
-        await handleShareFromHook()
     }
 
     const getTweetText = () => {
@@ -266,6 +260,7 @@ const UploadedPage: React.FC = () => {
                 {/* Visible Stamp Preview - vertical on mobile, horizontal on desktop */}
                 <div ref={stampPreviewRef}>
                     <StampPreview
+                        className={isMobile ? 'w-[80vw]' : 'w-[60vw]'}
                         headline={memoryData.title}
                         location={memoryData.location}
                         handle={memoryData.handle}
@@ -365,7 +360,6 @@ const UploadedPage: React.FC = () => {
                 shareUrl={memoryData ? getMemoryShareUrl(memoryData.id) : ''}
                 isOpen={isSharePopupOpen}
                 onClose={handleSharePopupClose}
-                isCapturing={isCapturing}
                 polaroidBlob={capturedBlob}
                 tweetText={getTweetText()}
                 onTwitterOpen={handleSharePopupClose}

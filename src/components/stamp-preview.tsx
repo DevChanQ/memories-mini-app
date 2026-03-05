@@ -202,9 +202,10 @@ export default function StampPreview({
                         padding: `max(calc(var(--stamp-scale) * 2em), 5%) max(calc(var(--stamp-scale) * 2.5em), 5%)`,
                     }}
                 >
-                    <div className={cn("space-y-4", layout === 'horizontal' && 'space-y-2')}>
+                    <div>
                         {/* Main headline */}
-                        <div className="items-center justify-center">
+                        <div
+                            className="items-center justify-center">
                             <h1
                                 // contentEditable
                                 id="headline-text"
@@ -232,7 +233,7 @@ export default function StampPreview({
                         {/* Header with location and handle */}
                         <div 
                             className={cn("flex items-center justify-start")}
-                            style={{ gap: `calc(var(--stamp-scale) * 1em)` }}
+                            style={{ gap: `calc(var(--stamp-scale) * 1em)`, marginBottom: `calc(var(--stamp-scale) * 0.75em)` }}
                         >
                             <div 
                                 className="flex items-center max-w-1/2 w-full"

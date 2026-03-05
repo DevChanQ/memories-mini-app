@@ -5,8 +5,9 @@ const ARWEAVE_GATEWAYS = [
 ] as const
 
 const ARWEAVE_GRAPHQL_GATEWAYS = [
-    'https://arweave-search.goldsky.com',
+    'https://ardrive.net',
     'https://arweave.net',
+    'https://arweave-search.goldsky.com',
 ] as const
 
 type Gateway = (typeof ARWEAVE_GATEWAYS)[number]
@@ -54,6 +55,12 @@ interface FallbackFetchOptions {
     shouldAccept?: (response: Response) => boolean
 }
 
+interface GraphqlFallbackOptions<TData> {
+    gateways?: readonly string[]
+    validateData?: (data: TData) => boolean
+    headers?: Record<string, string>
+}
+
 function isGraphqlRequest(pathOrUrl: string): boolean {
     try {
         return new URL(pathOrUrl).pathname === '/graphql'
@@ -89,6 +96,50 @@ export async function fetchWithGatewayFallback(
     }
 
     throw new Error(`All Arweave gateways failed for ${pathOrUrl}. ${failures.join(' | ')}`)
+}
+
+export async function fetchGraphqlWithGatewayFallback<TData = any>(
+    query: string,
+    variables?: Record<string, unknown>,
+    options: GraphqlFallbackOptions<TData> = {}
+): Promise<{ data: TData; url: string; gateway: string }> {
+    const gateways = options.gateways ?? ARWEAVE_GRAPHQL_GATEWAYS
+    const validateData = options.validateData ?? (() => true)
+    const failures: string[] = []
+
+    for (const gateway of gateways) {
+        const url = `${gateway}/graphql`
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(options.headers ?? {})
+                },
+                body: JSON.stringify({ query, variables: variables ?? {} })
+            })
+
+            if (!response.ok) {
+                failures.push(`${gateway}: HTTP ${response.status}`)
+                continue
+            }
+
+            const json = await response.json()
+            const data = json?.data as TData | undefined
+
+            if (data && validateData(data)) {
+                return { data, url, gateway }
+            }
+
+            failures.push(`${gateway}: GraphQL returned empty or invalid data`)
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown fetch error'
+            failures.push(`${gateway}: ${message}`)
+        }
+    }
+
+    throw new Error(`All GraphQL gateways failed for query. ${failures.join(' | ')}`)
 }
 
 export function isLikelyImageContentType(contentType: string | null): boolean {

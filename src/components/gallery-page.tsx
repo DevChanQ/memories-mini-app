@@ -17,7 +17,7 @@ import { QuickWallet } from 'quick-wallet'
 import permanent from "@/assets/permanent-light.png"
 import { cn } from '@/lib/utils'
 import { trackUploadFailed, trackUploadSucceeded } from '@/lib/analytics'
-import { buildArweaveTransactionUrl, fetchWithGatewayFallback, isLikelyImageContentType, validateArweaveImageWithFallback } from '@/lib/arweave-gateway'
+import { buildArweaveTransactionUrl, fetchGraphqlWithGatewayFallback, fetchWithGatewayFallback, isLikelyImageContentType, validateArweaveImageWithFallback } from '@/lib/arweave-gateway'
 
 // GraphQL query for fetching Arweave transactions
 const MEMORIES_QUERY = `query GetMemories($after: String) {
@@ -67,21 +67,18 @@ interface GraphQLResponse {
 
 // Function to fetch memories from Arweave
 const fetchMemories = async (cursor?: string): Promise<GraphQLResponse> => {
-    const { response } = await fetchWithGatewayFallback(
-        '/graphql',
+    const { data } = await fetchGraphqlWithGatewayFallback<GraphQLResponse['data']>(
+        MEMORIES_QUERY,
+        cursor ? { after: cursor } : {},
         {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                query: MEMORIES_QUERY,
-                variables: cursor ? { after: cursor } : {}
-            })
+            validateData: (data) => {
+                const edges = data?.transactions?.edges
+                return Array.isArray(edges) && edges.length > 0
+            }
         }
     )
 
-    return response.json()
+    return { data }
 }
 
 // Create a map to store real Arweave images
