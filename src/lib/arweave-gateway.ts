@@ -106,6 +106,8 @@ export async function fetchGraphqlWithGatewayFallback<TData = any>(
     const gateways = options.gateways ?? ARWEAVE_GRAPHQL_GATEWAYS
     const validateData = options.validateData ?? (() => true)
     const failures: string[] = []
+    let fallbackData: TData | undefined
+    let fallbackGateway: string = gateways[0]
 
     for (const gateway of gateways) {
         const url = `${gateway}/graphql`
@@ -128,6 +130,11 @@ export async function fetchGraphqlWithGatewayFallback<TData = any>(
             const json = await response.json()
             const data = json?.data as TData | undefined
 
+            if (data !== undefined) {
+                fallbackData = data
+                fallbackGateway = gateway
+            }
+
             if (data && validateData(data)) {
                 return { data, url, gateway }
             }
@@ -139,7 +146,21 @@ export async function fetchGraphqlWithGatewayFallback<TData = any>(
         }
     }
 
-    throw new Error(`All GraphQL gateways failed for query. ${failures.join(' | ')}`)
+    console.warn(`All GraphQL gateways failed validation for query. Returning fallback data. ${failures.join(' | ')}`)
+
+    if (fallbackData !== undefined) {
+        return {
+            data: fallbackData,
+            url: `${fallbackGateway}/graphql`,
+            gateway: fallbackGateway
+        }
+    }
+
+    return {
+        data: {} as TData,
+        url: `${gateways[0]}/graphql`,
+        gateway: gateways[0]
+    }
 }
 
 export function isLikelyImageContentType(contentType: string | null): boolean {

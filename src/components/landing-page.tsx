@@ -82,6 +82,7 @@ export async function uploadFileTurbo(file: File, api: any, tags: { name: string
             tags: [
                 { name: "App-Name", value: "Memories-App" },
                 { name: "App-Version", value: "1.0.3" },
+                { name: "App-Env", value: import.meta.env.DEV ? "Dev" : "Prod" },
                 { name: "Content-Type", value: file.type ?? "application/octet-stream" },
                 { name: "Name", value: file.name ?? "unknown" },
                 ...tags
