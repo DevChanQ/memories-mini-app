@@ -327,7 +327,7 @@ const LandingPage: React.FC = () => {
                     {/* Left Content */}
                     <div className="relative space-y-10 self-center pt-6 md:pt-0 lg:-top-10">
                         <div className="space-y-6">
-                            <h2 className="text-white font-instrument text-5xl md:text-8xl md:leading-[90px]">
+                            <h2 className="text-white font-instrument text-5xl lg:text-8xl lg:leading-[90px]">
                                 Your memory <br />can last forever
                             </h2>
                             <p className="font-montserrat text-white text-sm md:text-xl leading-relaxed">
