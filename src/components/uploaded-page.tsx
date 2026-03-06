@@ -80,7 +80,12 @@ const UploadedPage: React.FC = () => {
 
             const { data } = await fetchGraphqlWithGatewayFallback<{ transaction: { id: string; tags: { name: string; value: string }[] } | null }>(
                 query,
-                { id: transactionId }
+                {
+                    id: transactionId,
+                },
+                {
+                    validateData: (data) => !!data.transaction, // Ensure transaction exists
+                }
             )
 
             const transaction = data.transaction
