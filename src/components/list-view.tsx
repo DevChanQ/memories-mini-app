@@ -15,17 +15,25 @@ import { getMemoryShareUrl, getMemoryTweetText } from '@/utils/share'
 interface ListViewProps {
     items: CanvasItem[]
     onImageClick?: (item: CanvasItem) => void
+    onLoadMore?: () => void | Promise<void>
+    hasMore?: boolean
+    isLoadingMore?: boolean
 }
 
-const ListViewComponent: React.FC<ListViewProps> = ({ items, onImageClick }) => {
+const ListViewComponent: React.FC<ListViewProps> = ({
+    items,
+    onImageClick,
+    onLoadMore,
+    hasMore = false,
+    isLoadingMore = false,
+}) => {
     const [selectedItem, setSelectedItem] = useState<CanvasItem | null>(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const isMobile = useIsMobile()
     const scrollAreaRef = useRef<HTMLDivElement>(null)
-    const isScrollingRef = useRef(false)
-    const desktopStampRef = useRef<HTMLDivElement>(null)
     const mobileStampRef = useRef<HTMLDivElement>(null)
     const selectionUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const loadMoreLockRef = useRef(false)
     const {
         capturedBlob,
         handleShare,
@@ -69,10 +77,6 @@ const ListViewComponent: React.FC<ListViewProps> = ({ items, onImageClick }) => 
         }
     }
 
-    const handleModalClose = () => {
-        setIsModalOpen(false)
-    }
-
     const handleShareClick = async () => {
         if (!selectedItem) return
         await handleShare()
@@ -83,50 +87,26 @@ const ListViewComponent: React.FC<ListViewProps> = ({ items, onImageClick }) => 
         return getMemoryTweetText(selectedItem.title || 'Memory', getMemoryShareUrl(selectedItem.id))
     }
 
-    // Function to get the index of current item
-    const getCurrentIndex = () => {
-        if (!selectedItem) return -1
-        return items.findIndex(item => item.id === selectedItem.id)
-    }
-
-    const currentIndex = getCurrentIndex()
-
-    // Create infinite list by repeating items multiple times (5 copies for smooth infinite scrolling)
-    const infiniteItems = items.length > 0 ? [
-        ...items,
-        // ...items,
-        // ...items,
-        // ...items,
-        // ...items
-    ] : []
-
-    // Handle scroll to create infinite loop effect and update selected item
+    // Handle scroll for item selection and pagination
     const handleScroll = useCallback((event: any) => {
         if (items.length === 0) return
 
-        const scrollElement = event.target
+        const scrollElement = event.target as HTMLElement
         const scrollTop = scrollElement.scrollTop
         const scrollHeight = scrollElement.scrollHeight
         const clientHeight = scrollElement.clientHeight
 
-        // Calculate the height of one complete set of items
-        const singleSetHeight = scrollHeight / 5 // We have 5 copies
+        const distanceFromBottom = scrollHeight - (scrollTop + clientHeight)
+        const isNearBottom = distanceFromBottom < 320
 
-        // // Handle infinite scroll jumps (don't let isScrollingRef block this)
-        // // If scrolled near the top (first copy), jump to the middle copy
-        // if (scrollTop < singleSetHeight * 0.05 && !isScrollingRef.current) {
-        //     isScrollingRef.current = true
-        //     scrollElement.scrollTop = scrollTop + singleSetHeight * 2
-        //     setTimeout(() => { isScrollingRef.current = false }, 100)
-        //     return
-        // }
-        // // If scrolled near the bottom (last copy), jump to the middle copy
-        // else if (scrollTop > singleSetHeight * 4.95 && !isScrollingRef.current) {
-        //     isScrollingRef.current = true
-        //     scrollElement.scrollTop = scrollTop - singleSetHeight * 2
-        //     setTimeout(() => { isScrollingRef.current = false }, 100)
-        //     return
-        // }
+        if (!isNearBottom) {
+            loadMoreLockRef.current = false
+        }
+
+        if (isNearBottom && hasMore && !isLoadingMore && onLoadMore && !loadMoreLockRef.current) {
+            loadMoreLockRef.current = true
+            void onLoadMore()
+        }
 
         // Debounce the selection update to avoid jittery scrolling
         if (selectionUpdateTimeoutRef.current) {
@@ -135,7 +115,7 @@ const ListViewComponent: React.FC<ListViewProps> = ({ items, onImageClick }) => 
 
         selectionUpdateTimeoutRef.current = setTimeout(() => {
             // Update selected item based on scroll position
-            const itemElements = scrollElement.querySelectorAll('button')
+            const itemElements = scrollElement.querySelectorAll('button[data-list-item="true"]')
             if (itemElements.length > 0) {
                 // Use the top third of the viewport as the "focus" area
                 const focusPoint = scrollTop + (clientHeight * 0.3)
@@ -156,9 +136,10 @@ const ListViewComponent: React.FC<ListViewProps> = ({ items, onImageClick }) => 
                 })
 
                 if (closestItem !== null) {
-                    // Map back to original items array (handle infinite copies)
-                    const originalIndex = closestItem % items.length
+                    const focusedElement = itemElements[closestItem] as HTMLElement
+                    const originalIndex = Number(focusedElement.dataset.itemIndex)
                     const newSelectedItem = items[originalIndex]
+                    if (!newSelectedItem) return
 
                     // Only update if it's a different item
                     setSelectedItem(prevSelected => {
@@ -170,7 +151,7 @@ const ListViewComponent: React.FC<ListViewProps> = ({ items, onImageClick }) => 
                 }
             }
         }, 3) // Reduced debounce for faster selection updates
-    }, [items.length])
+    }, [items, hasMore, isLoadingMore, onLoadMore])
 
     // Cleanup timeout on unmount
     useEffect(() => {
@@ -180,6 +161,12 @@ const ListViewComponent: React.FC<ListViewProps> = ({ items, onImageClick }) => 
             }
         }
     }, [])
+
+    useEffect(() => {
+        if (!isLoadingMore) {
+            loadMoreLockRef.current = false
+        }
+    }, [isLoadingMore])
 
     // Set up scroll listener
     useEffect(() => {
@@ -206,16 +193,6 @@ const ListViewComponent: React.FC<ListViewProps> = ({ items, onImageClick }) => 
             document.head.appendChild(style)
 
             scrollArea.addEventListener('scroll', handleScroll)
-
-            // Start in the middle set of items (wait for content to render)
-            if (items.length > 0) {
-                setTimeout(() => {
-                    const singleSetHeight = scrollArea.scrollHeight / 5
-                    if (singleSetHeight > 0) {
-                        scrollArea.scrollTop = singleSetHeight * 2
-                    }
-                }, 100)
-            }
 
             return () => {
                 scrollArea.removeEventListener('scroll', handleScroll)
@@ -257,8 +234,6 @@ const ListViewComponent: React.FC<ListViewProps> = ({ items, onImageClick }) => 
         )
     }
 
-    console.log('selectedItem', selectedItem);
-
     return (
         <div className='relative h-full w-screen overflow-clip'>
             {/* Top blur fade */}
@@ -272,23 +247,16 @@ const ListViewComponent: React.FC<ListViewProps> = ({ items, onImageClick }) => 
                     style={{ scrollBehavior: 'auto' }}
                     scrollHideDelay={0}
                 >
-                    <div className="p-4 pt-20 pb-35 md:pt-70 md:pb-130 tracking-[5px]" style={{ scrollBehavior: 'auto' }}>
-                        {infiniteItems.map((item, index) => {
+                    <div className="p-4 pt-20 pb-35 md:pt-70 md:pb-130 md:px-16 tracking-[5px]" style={{ scrollBehavior: 'auto' }}>
+                        {items.map((item, index) => {
                             const isSelected = selectedItem?.id === item.id
-                            const originalIndex = index % items.length
-                            const headline = item.title || `Memory ${originalIndex + 1}`
-                            const location = item.metadata?.location || 'Unknown location'
-                            const date = item.metadata?.date
-                                ? new Date(item.metadata.date).toLocaleDateString('en-US', {
-                                    year: 'numeric',
-                                    month: 'short',
-                                    day: 'numeric'
-                                })
-                                : 'Unknown date'
+                            const headline = item.title || `Memory ${index + 1}`
 
                             return (
                                 <button
-                                    key={`${item.id}-${index}`}
+                                    key={item.id}
+                                    data-list-item="true"
+                                    data-item-index={index}
                                     onClick={() => handleItemClick(item)}
                                     className={cn(
                                         "w-full text-left p-4 transition-all duration-200",
@@ -318,6 +286,13 @@ const ListViewComponent: React.FC<ListViewProps> = ({ items, onImageClick }) => 
                                 </button>
                             )
                         })}
+                        <div className="px-4 py-6 text-center text-white/50">
+                            {isLoadingMore
+                                ? 'Loading more memories...'
+                                : hasMore
+                                    ? 'Scroll for more'
+                                    : 'You\'ve reached the end'}
+                        </div>
                     </div>
                     {isMobile && <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black to-transparent z-10 pointer-events-none" />}
                 </ScrollArea>

@@ -24,8 +24,6 @@ const MEMORIES_QUERY = `query GetMemories($after: String) {
     transactions(
         tags: [
             {name: "App-Name", values: ["Memories-App"]}
-            {name: "App-Version", values: ["1.0.3"]}
-            {name: "App-Env", values: ["${import.meta.env.DEV ? "Dev" : "Prod"}"]}
             {name: "Visibility", values: ["Public"]}
         ],
         after: $after
@@ -40,6 +38,9 @@ const MEMORIES_QUERY = `query GetMemories($after: String) {
                     value
                 }
             }
+        }
+        pageInfo {
+            hasNextPage
         }
     }
 }`
@@ -62,6 +63,9 @@ interface GraphQLResponse {
     data: {
         transactions: {
             edges: TransactionEdge[]
+            pageInfo: {
+                hasNextPage: boolean
+            }
         }
     }
 }
@@ -74,7 +78,7 @@ const fetchMemories = async (cursor?: string): Promise<GraphQLResponse> => {
         {
             validateData: (data) => {
                 const edges = data?.transactions?.edges
-                return Array.isArray(edges) && edges.length > 0
+                return Array.isArray(edges)
             }
         }
     )
@@ -290,15 +294,12 @@ const GalleryPage: React.FC = () => {
                 return newSet
             })
 
-            // Set hasNextPage based on whether we got the full requested amount (20)
-            setHasNextPage(response.data.transactions.edges.length === 20)
+            const lastEdgeCursor = response.data.transactions.edges.length > 0
+                ? response.data.transactions.edges[response.data.transactions.edges.length - 1].cursor
+                : null
 
-            // Set endCursor to the cursor of the last transaction
-            if (response.data.transactions.edges.length > 0) {
-                setEndCursor(response.data.transactions.edges[response.data.transactions.edges.length - 1].cursor)
-            } else {
-                setEndCursor(null)
-            }
+            setHasNextPage(response.data.transactions.pageInfo.hasNextPage)
+            setEndCursor(lastEdgeCursor)
 
         } catch (err) {
             console.error('Failed to load Arweave memories:', err)
@@ -310,9 +311,9 @@ const GalleryPage: React.FC = () => {
     }, [])
 
     // Load more memories (pagination)
-    const loadMoreMemories = useCallback(() => {
+    const loadMoreMemories = useCallback(async () => {
         if (hasNextPage && !isLoadingMore && endCursor) {
-            loadArweaveMemories(endCursor, true)
+            await loadArweaveMemories(endCursor, true)
         }
     }, [hasNextPage, isLoadingMore, endCursor, loadArweaveMemories])
 
@@ -444,6 +445,25 @@ const GalleryPage: React.FC = () => {
 
         return allItems
     }, [isMobile, validatedImages])
+
+    const listItems: CanvasItem[] = useMemo(() => {
+        return Array.from(arweaveImageMap.entries()).map(([transactionId, arweaveData], index) => ({
+            id: transactionId,
+            x: 0,
+            y: index,
+            width: 0,
+            height: 0,
+            imageUrl: arweaveData.url,
+            title: arweaveData.title,
+            metadata: {
+                location: arweaveData.location,
+                date: arweaveData.date ? new Date(arweaveData.date) : new Date(),
+                description: arweaveData.description,
+                tags: [],
+                camera: undefined,
+            },
+        }))
+    }, [validatedImages])
 
     // Load initial data
     useEffect(() => {
@@ -736,8 +756,11 @@ const GalleryPage: React.FC = () => {
             {arweaveImageMap.size > 0 && viewMode === 'list' && (
                 <div className="absolute inset-0 pt-24 z-10">
                     <ListViewComponent
-                        items={items.filter(item => item.id !== 'upload-button')}
+                        items={listItems}
                         onImageClick={handleImageClick}
+                        onLoadMore={loadMoreMemories}
+                        hasMore={hasNextPage}
+                        isLoadingMore={isLoadingMore}
                     />
                 </div>
             )}
