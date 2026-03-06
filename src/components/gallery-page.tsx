@@ -17,8 +17,6 @@ import { QuickWallet } from 'quick-wallet'
 import permanent from "@/assets/permanent-light.png"
 import { cn } from '@/lib/utils'
 import { trackUploadFailed, trackUploadSucceeded } from '@/lib/analytics'
-import { buildArweaveTransactionUrl, fetchGraphqlWithGatewayFallback, fetchWithGatewayFallback, isLikelyImageContentType, validateArweaveImageWithFallback } from '@/lib/arweave-gateway'
-
 import { buildArweaveTransactionUrl, fetchWithGatewayFallback, isLikelyImageContentType, validateArweaveImageWithFallback } from '@/lib/arweave-gateway'
 import { fetchMemories, type ArweaveTransaction } from '@/utils/memories'
 
