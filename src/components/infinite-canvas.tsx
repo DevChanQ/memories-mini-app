@@ -42,7 +42,7 @@ const CanvasItemComponent = React.memo<{
     onImageClick?: (item: CanvasItem) => void
 }>(({ item, onMouseDown, onImageClick }) => {
     // Check if this is the upload button - do this FIRST
-    const isUploadButton = item.id === 'upload-button' || item.id.startsWith('upload-button-tile-')
+    const isUploadButton = item.id.startsWith('upload-button')
 
     const [imageLoaded, setImageLoaded] = React.useState(false)
     const [imageError, setImageError] = React.useState(false)

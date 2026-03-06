@@ -521,7 +521,7 @@ const GalleryPage: React.FC = () => {
     // Handle image click to open modal
     const handleImageClick = useCallback((item: CanvasItem) => {
         // Check if this is the upload button (including tiled versions)
-        if (item.id === 'upload-button' || item.id.startsWith('upload-button-tile-')) {
+        if (item.id.startsWith('upload-button')) {
             // Trigger file selection instead of directly opening modal
             handleUploadClick()
             return
