@@ -5,15 +5,13 @@ import { Button } from './ui/button'
 import UploadModal, { type UploadData } from './upload-modal'
 import { useIsMobile } from '../hooks/use-mobile'
 import imageCompression from 'browser-image-compression';
-import { ArconnectSigner, TurboFactory } from '@ardrive/turbo-sdk/web';
-import permanentImage from "@/assets/permanent.png"
 import { cn } from '@/lib/utils'
 import StampPreview from './stamp-preview'
 import { QuickWallet } from 'quick-wallet'
 import { loadNSFWModel } from '@/lib/nsfw'
 import { trackUploadFailed, trackUploadSucceeded } from '@/lib/analytics'
 import { validateArweaveImageWithFallback } from '@/lib/arweave-gateway'
-import { buildMemoryUploadTags } from '@/utils/memory-tags'
+import { uploadFileTurbo } from '@/lib/turbo'
 
 interface MemoryData {
     id: string
@@ -69,21 +67,6 @@ const compressionOptions = {
     fileType: 'image/jpeg', // JPEG for better compression
     alwaysKeepResolution: false, // Allow smart resolution adjustment
     preserveExif: false, // Remove EXIF data to save space
-}
-
-export async function uploadFileTurbo(file: File, api: any, tags: { name: string, value: string }[] = []) {
-    const signer = new ArconnectSigner(api)
-    console.log('signer', signer);
-
-    const turbo = TurboFactory.authenticated({ signer })
-    const res = await turbo.uploadFile({
-        fileStreamFactory: () => file.stream(),
-        fileSizeFactory: () => file.size,
-        dataItemOpts: {
-            tags: buildMemoryUploadTags(file, tags),
-        }
-    })
-    return res.id;
 }
 
 export function MemoriesLogo({ theme = 'light' }: { theme?: 'light' | 'dark' }) {

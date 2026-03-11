@@ -12,14 +12,13 @@ import { Home, Plus, User, RefreshCw, Upload, LayoutGrid, List, LayoutList } fro
 import { MemoriesLogo } from './landing-page'
 import UploadModal, { type UploadData } from './upload-modal'
 import imageCompression from 'browser-image-compression'
-import { ArconnectSigner, TurboFactory } from '@ardrive/turbo-sdk/web'
 import { QuickWallet } from 'quick-wallet'
 import permanent from "@/assets/permanent-light.png"
 import { cn } from '@/lib/utils'
 import { trackUploadFailed, trackUploadSucceeded } from '@/lib/analytics'
 import { buildArweaveTransactionUrl, fetchWithGatewayFallback, isLikelyImageContentType, validateArweaveImageWithFallback } from '@/lib/arweave-gateway'
 import { fetchMemories, type ArweaveTransaction } from '@/utils/memories'
-import { buildMemoryUploadTags } from '@/utils/memory-tags'
+import { uploadFileTurbo } from '@/lib/turbo'
 
 // Create a map to store real Arweave images
 const arweaveImageMap = new Map<string, { url: string; title: string; location?: string; description?: string; handle?: string; date?: string }>()
@@ -34,22 +33,6 @@ const compressionOptions = {
     fileType: 'image/jpeg', // JPEG for better compression
     alwaysKeepResolution: false, // Allow smart resolution adjustment
     preserveExif: false, // Remove EXIF data to save space
-}
-
-// Upload file to Arweave using Turbo
-async function uploadFileTurbo(file: File, api: any, tags: { name: string, value: string }[] = []) {
-    const signer = new ArconnectSigner(api)
-    console.log('signer', signer);
-
-    const turbo = TurboFactory.authenticated({ signer })
-    const res = await turbo.uploadFile({
-        fileStreamFactory: () => file.stream(),
-        fileSizeFactory: () => file.size,
-        dataItemOpts: {
-            tags: buildMemoryUploadTags(file, tags),
-        }
-    })
-    return res.id;
 }
 
 // Function to check if a URL is a valid image
