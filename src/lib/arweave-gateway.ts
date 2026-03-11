@@ -7,6 +7,7 @@ const ARWEAVE_GATEWAYS = [
 const ARWEAVE_GRAPHQL_GATEWAYS = [
     'https://arweave.net',
     'https://arweave-search.goldsky.com',
+    'https://g8way.io',
     'https://ardrive.net',
     'https://ar.io',
     'https://turbo-gateway.com',
@@ -19,6 +20,7 @@ const ARWEAVE_GATEWAY_HOSTS = new Set(
 )
 
 const normalizePath = (value: string) => (value.startsWith('/') ? value : `/${value}`)
+const GATEWAY_FETCH_TIMEOUT_MS = 3000
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -83,17 +85,44 @@ export async function fetchWithGatewayFallback(
 
     for (const gateway of gateways) {
         const url = toGatewayUrl(pathOrUrl, gateway)
+        const timeoutController = new AbortController()
+        const timeoutId = setTimeout(() => {
+            timeoutController.abort(new DOMException(`Request timed out after ${GATEWAY_FETCH_TIMEOUT_MS}ms`, 'TimeoutError'))
+        }, GATEWAY_FETCH_TIMEOUT_MS)
+        let removeAbortListener: (() => void) | undefined
+
+        if (init.signal) {
+            if (init.signal.aborted) {
+                timeoutController.abort(init.signal.reason)
+            } else {
+                const onAbort = () => timeoutController.abort(init.signal?.reason)
+                init.signal.addEventListener('abort', onAbort, { once: true })
+                removeAbortListener = () => init.signal?.removeEventListener('abort', onAbort)
+            }
+        }
+
+        const requestInit: RequestInit = {
+            ...init,
+            signal: timeoutController.signal,
+        }
 
         try {
-            const response = await fetch(url, init)
+            const response = await fetch(url, requestInit)
             if (shouldAccept(response)) {
                 return { response, url, gateway }
             }
 
             failures.push(`${gateway}: HTTP ${response.status}`)
         } catch (error) {
-            const message = error instanceof Error ? error.message : 'Unknown fetch error'
-            failures.push(`${gateway}: ${message}`)
+            if (timeoutController.signal.aborted && !init.signal?.aborted) {
+                failures.push(`${gateway}: Request timed out after ${GATEWAY_FETCH_TIMEOUT_MS}ms`)
+            } else {
+                const message = error instanceof Error ? error.message : 'Unknown fetch error'
+                failures.push(`${gateway}: ${message}`)
+            }
+        } finally {
+            clearTimeout(timeoutId)
+            removeAbortListener?.()
         }
     }
 
