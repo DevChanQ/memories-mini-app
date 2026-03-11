@@ -11,6 +11,7 @@ import { QuickWallet } from 'quick-wallet'
 import { loadNSFWModel } from '@/lib/nsfw'
 import { trackUploadFailed, trackUploadSucceeded } from '@/lib/analytics'
 import { validateArweaveImageWithFallback } from '@/lib/arweave-gateway'
+import { triggerUploadSuccessConfetti } from '@/lib/confetti'
 import { uploadFileTurbo } from '@/lib/turbo'
 
 interface MemoryData {
@@ -187,6 +188,7 @@ const LandingPage: React.FC = () => {
                     isPublic: uploadData.isPublic,
                 })
                 console.log('✅ Image validated successfully, navigating to view page')
+                triggerUploadSuccessConfetti()
                 // Close modal before navigating
                 setIsUploadModalOpen(false)
                 setIsUploading(false)

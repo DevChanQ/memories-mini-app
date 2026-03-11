@@ -17,6 +17,7 @@ import permanent from "@/assets/permanent-light.png"
 import { cn } from '@/lib/utils'
 import { trackUploadFailed, trackUploadSucceeded } from '@/lib/analytics'
 import { buildArweaveTransactionUrl, fetchWithGatewayFallback, isLikelyImageContentType, validateArweaveImageWithFallback } from '@/lib/arweave-gateway'
+import { triggerUploadSuccessConfetti } from '@/lib/confetti'
 import { fetchMemories, type ArweaveTransaction } from '@/utils/memories'
 import { uploadFileTurbo } from '@/lib/turbo'
 
@@ -541,6 +542,7 @@ const GalleryPage: React.FC = () => {
                     isPublic: uploadData.isPublic,
                 })
                 console.log('✅ Image validated successfully, navigating to view page')
+                triggerUploadSuccessConfetti()
                 // Close modal before navigating
                 setIsUploadModalOpen(false)
                 setIsUploading(false)
