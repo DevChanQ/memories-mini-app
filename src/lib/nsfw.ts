@@ -53,10 +53,10 @@ export async function checkNSFW(imageElement: HTMLImageElement | HTMLCanvasEleme
         const sexyScore = sexyPrediction?.probability || 0
         const hentaiScore = hentaiPrediction?.probability || 0
 
-        const PORN_THRESHOLD = 0.3
-        const SEXY_THRESHOLD = 0.5
-        const HENTAI_THRESHOLD = 0.3
-        const COMBINED_THRESHOLD = 0.6
+        const PORN_THRESHOLD = 0.6
+        const SEXY_THRESHOLD = 0.75
+        const HENTAI_THRESHOLD = 0.6
+        const COMBINED_THRESHOLD = 0.8
 
         if (pornScore > PORN_THRESHOLD) {
             return {
