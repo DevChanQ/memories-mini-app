@@ -6,6 +6,7 @@ export async function uploadFileTurbo(file: File, tags: { name: string, value: s
   const { QuickWallet } = await import('quick-wallet')
 
   QuickWallet.connect()
+  // @ts-ignore: ArconnectSigner is not typed to accept QuickWallet, but it works
   const signer = new ArconnectSigner(QuickWallet)
   const turbo = TurboFactory.authenticated({ signer })
   const res = await turbo.uploadFile({
