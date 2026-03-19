@@ -1,7 +1,7 @@
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { ThemeProvider } from '@/components/theme-provider.tsx'
-import { HashRouter, Route, Routes, useLocation } from "react-router"
+import { HashRouter, Navigate, Route, Routes, useLocation } from "react-router"
 import { ArweaveWalletKit } from "@arweave-wallet-kit/react"
 import WanderStrategy from "@arweave-wallet-kit/wander-strategy"
 import WAuthStrategy from "@wauth/strategy"
@@ -13,6 +13,7 @@ import GalleryPage from './components/gallery-page'
 import UploadedPage from './components/uploaded-page'
 import TermsAndConditions from './components/tnc'
 import HowItWorks from './components/how-it-works'
+import ConstructionPage from './components/construction-page'
 
 import { QuickWallet } from "quick-wallet"
 import QuickWalletStrategy from '@vela-ventures/quick-wallet-strategy'
@@ -20,6 +21,8 @@ import { useEffect } from 'react'
 import { Toaster } from './components/ui/sonner'
 import { PostHogProvider } from "posthog-js/react"
 import { initializeSessionAttribution, trackPageView } from './lib/analytics'
+
+const CONSTRUCTION_MODE = import.meta.env.VITE_CONSTRUCTION_MODE === 'true'
 
 function AnalyticsTracker() {
   const location = useLocation()
@@ -68,11 +71,20 @@ function Main() {
       <HashRouter>
         <AnalyticsTracker />
         <Routes>
-          <Route index element={<App />} />
-          <Route path='gallery' element={<GalleryPage />} />
-          <Route path='view/:transactionId' element={<UploadedPage />} />
-          <Route path='tnc' element={<TermsAndConditions />} />
-          <Route path='how-it-works' element={<HowItWorks />} />
+          {CONSTRUCTION_MODE ? (
+            <>
+              <Route index element={<ConstructionPage />} />
+              <Route path='*' element={<Navigate to="/" replace />} />
+            </>
+          ) : (
+            <>
+              <Route index element={<App />} />
+              <Route path='gallery' element={<GalleryPage />} />
+              <Route path='view/:transactionId' element={<UploadedPage />} />
+              <Route path='tnc' element={<TermsAndConditions />} />
+              <Route path='how-it-works' element={<HowItWorks />} />
+            </>
+          )}
         </Routes>
       </HashRouter>
     </ThemeProvider>

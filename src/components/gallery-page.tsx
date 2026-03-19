@@ -22,6 +22,7 @@ import { fetchMemories, type ArweaveTransaction } from '@/utils/memories'
 import { uploadFileTurbo } from '@/lib/turbo'
 import { HANDLE_PLATFORM_TAG, normalizeHandlePlatform } from '@/utils/handle-links'
 import { saveLocalMemory, getLocalMemories } from '@/lib/local-memories'
+import { fetchBlacklist } from '@/lib/blacklist'
 
 // Create a map to store real Arweave images
 const arweaveImageMap = new Map<string, { url: string; title: string; location?: string; description?: string; handle?: string; handlePlatform?: 'x' | 'instagram' | 'telegram'; date?: string; isPrivate?: boolean }>()
@@ -124,7 +125,10 @@ const GalleryPage: React.FC = () => {
             }
 
             const response = await fetchMemories(cursor)
-            const transactions = response.data.transactions.edges.map(edge => edge.node)
+            const blacklist = await fetchBlacklist()
+            const transactions = response.data.transactions.edges
+                .map(edge => edge.node)
+                .filter(tx => !blacklist.has(tx.id))
 
             if (append) {
                 setArweaveMemories(prev => [...prev, ...transactions])

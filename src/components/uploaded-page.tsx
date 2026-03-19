@@ -12,6 +12,7 @@ import { getMemoryShareUrl, getMemoryTweetText } from '../utils/share'
 import { buildArweaveTransactionUrl, fetchGraphqlWithGatewayFallback } from '@/lib/arweave-gateway'
 import { HANDLE_PLATFORM_TAG, normalizeHandlePlatform, type HandlePlatform } from '@/utils/handle-links'
 import { saveLocalMemory } from '@/lib/local-memories'
+import { isBlacklisted } from '@/lib/blacklist'
 
 interface MemoryData {
     id: string
@@ -108,6 +109,11 @@ const UploadedPage: React.FC = () => {
             // Check if it's a valid memory (has our app tags)
             if (tags['App-Name'] !== 'Memories-App') {
                 throw new Error('This transaction is not a memory from our app')
+            }
+
+            // Check if this memory has been blacklisted
+            if (await isBlacklisted(transaction.id)) {
+                throw new Error('This memory has been removed')
             }
 
             const memory: MemoryData = {
