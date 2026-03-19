@@ -5,6 +5,7 @@ import { Button } from './ui/button'
 import UploadModal, { type UploadData } from './upload-modal'
 import { useIsMobile } from '../hooks/use-mobile'
 import imageCompression from 'browser-image-compression';
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import StampPreview from './stamp-preview'
 import { loadNSFWModel } from '@/lib/nsfw'
@@ -189,8 +190,8 @@ const LandingPage: React.FC = () => {
                 stage: uploadStage,
                 errorMessage: error instanceof Error ? error.message : 'Unknown upload error',
             })
-            // You might want to show a user-friendly error message here
-            alert(error instanceof Error ? error.message : 'Upload failed. Please try again.')
+            toast.error(error instanceof Error ? error.message : 'Upload failed. Please try again.')
+            throw error
         } finally {
             setIsUploading(false)
         }

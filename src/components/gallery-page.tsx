@@ -13,6 +13,7 @@ import { MemoriesLogo } from './landing-page'
 import UploadModal, { type UploadData } from './upload-modal'
 import imageCompression from 'browser-image-compression'
 import permanent from "@/assets/permanent-light.png"
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { trackUploadFailed, trackUploadSucceeded } from '@/lib/analytics'
 import { buildArweaveTransactionUrl, fetchWithGatewayFallback, isLikelyImageContentType, validateArweaveImageWithFallback } from '@/lib/arweave-gateway'
@@ -556,7 +557,8 @@ const GalleryPage: React.FC = () => {
                 stage: uploadStage,
                 errorMessage: error instanceof Error ? error.message : 'Unknown upload error',
             })
-            alert(error instanceof Error ? error.message : 'Upload failed. Please try again.')
+            toast.error(error instanceof Error ? error.message : 'Upload failed. Please try again.')
+            throw error
         } finally {
             setIsUploading(false)
         }

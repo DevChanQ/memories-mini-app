@@ -1,3 +1,5 @@
+import { MEMORY_APP_NAME, MEMORY_APP_VERSION, getMemoryAppEnv } from '@/utils/memory-tags'
+
 const API_URL = import.meta.env.VITE_BACKEND_API_URL
 
 export async function uploadFileTurbo(file: File, tags: { name: string, value: string }[] = []) {
@@ -41,6 +43,9 @@ export async function uploadViaBackend(file: File, metadata: UploadMetadata): Pr
   formData.append('handle', metadata.handle)
   formData.append('handlePlatform', metadata.handlePlatform)
   formData.append('isPublic', String(metadata.isPublic))
+  formData.append('appName', MEMORY_APP_NAME)
+  formData.append('appVersion', MEMORY_APP_VERSION)
+  formData.append('appEnv', getMemoryAppEnv())
 
   if (metadata.description?.trim()) {
     formData.append('description', metadata.description.trim())
