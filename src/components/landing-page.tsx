@@ -7,13 +7,11 @@ import { useIsMobile } from '../hooks/use-mobile'
 import imageCompression from 'browser-image-compression';
 import { cn } from '@/lib/utils'
 import StampPreview from './stamp-preview'
-import { QuickWallet } from 'quick-wallet'
 import { loadNSFWModel } from '@/lib/nsfw'
 import { trackUploadFailed, trackUploadSucceeded } from '@/lib/analytics'
 import { buildArweaveTransactionUrl, validateArweaveImageWithFallback } from '@/lib/arweave-gateway'
 import { triggerUploadSuccessConfetti } from '@/lib/confetti'
-import { uploadFileTurbo } from '@/lib/turbo'
-import { HANDLE_PLATFORM_TAG } from '@/utils/handle-links'
+import { uploadViaBackend } from '@/lib/turbo'
 import { saveLocalMemory } from '@/lib/local-memories'
 
 interface MemoryData {
@@ -97,9 +95,7 @@ const LandingPage: React.FC = () => {
     const isMobile = useIsMobile()
     const [isDragging, setIsDragging] = useState(false)
     const [initialFile, setInitialFile] = useState<File | null>(null)
-    const api = QuickWallet
     const navigate = useNavigate()
-    const address = QuickWallet.getActiveAddress()
 
     // Preload NSFW model when landing page mounts
     useEffect(() => {
@@ -109,48 +105,24 @@ const LandingPage: React.FC = () => {
     }, [])
 
     async function handleImageUpload(file: File, uploadData: UploadData): Promise<string> {
-        if (!api) throw new Error('Wallet not initialized not found');
+        let finalFile = file;
 
-        console.log('originalFile instanceof Blob', file instanceof Blob); // true
-        console.log(`originalFile size ${file.size / 1024 / 1024} MB`);
-
-        try {
-            let finalFile = file;
-
-            // Only compress if file is larger than 100KB
-            if (file.size > 100 * 1024) {
-                console.log('File is larger than 100KB, compressing...');
-                finalFile = await imageCompression(file, compressionOptions);
-                console.log('compressedFile instanceof Blob', finalFile instanceof Blob); // true
-                console.log(`compressedFile size ${finalFile.size / 1024} KB`);
-            } else {
-                console.log('File is under 100KB, uploading as-is');
-            }
-
-            const extraTags = [
-                { name: "Title", value: uploadData.title },
-                { name: "Location", value: uploadData.location },
-                { name: "Handle", value: uploadData.handle },
-                { name: HANDLE_PLATFORM_TAG, value: uploadData.handlePlatform },
-                { name: "Visibility", value: uploadData.isPublic ? "Public" : "Not-Public" }
-            ]
-
-            if (uploadData.description?.trim()) {
-                extraTags.push({ name: "Description", value: uploadData.description.trim() })
-            }
-
-            // add Date tag if available
-            if (uploadData.datetime) {
-                extraTags.push({ name: "Date", value: uploadData.datetime })
-            }
-
-            const id = await uploadFileTurbo(finalFile, api, extraTags);
-            console.log('id', id);
-            return id;
-        } catch (error) {
-            console.log(error);
-            return '';
+        // Only compress if file is larger than 100KB
+        if (file.size > 100 * 1024) {
+            finalFile = await imageCompression(file, compressionOptions);
         }
+
+        const id = await uploadViaBackend(finalFile, {
+            title: uploadData.title,
+            location: uploadData.location,
+            handle: uploadData.handle,
+            handlePlatform: uploadData.handlePlatform,
+            isPublic: uploadData.isPublic,
+            description: uploadData.description,
+            datetime: uploadData.datetime,
+        });
+
+        return id;
     }
 
 

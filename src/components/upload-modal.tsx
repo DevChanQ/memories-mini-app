@@ -12,7 +12,6 @@ import postcardH from '@/assets/postcard-h.svg'
 import { Toggle } from './ui/toggle'
 import { Switch } from './ui/switch'
 import { Checkbox } from './ui/checkbox'
-import { QuickWallet } from 'quick-wallet'
 import convertHEIC from 'heic-convert/browser'
 import ExifReader from 'exifreader'
 import { checkNSFW } from '@/lib/nsfw'
@@ -100,12 +99,6 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload, in
     const isMobile = useIsMobile()
     // Force vertical orientation on mobile
     const [orientation, setOrientation] = useState<'horizontal' | 'vertical'>('vertical')
-    // const address = useActiveAddress()
-    // const api = useApi()
-    // const { setOpen } = useProfileModal()
-    const address = QuickWallet.getActiveAddress()
-    const api = QuickWallet
-
     const fetchNearbyLocations = async (lat: number, lon: number) => {
         setIsLoadingLocations(true)
         try {
