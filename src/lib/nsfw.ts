@@ -53,36 +53,42 @@ export async function checkNSFW(imageElement: HTMLImageElement | HTMLCanvasEleme
         const sexyScore = sexyPrediction?.probability || 0
         const hentaiScore = hentaiPrediction?.probability || 0
 
-        // Thresholds for blocking
-        const PORN_THRESHOLD = 0.5
+        const PORN_THRESHOLD = 0.3
         const SEXY_THRESHOLD = 0.5
-        const HENTAI_THRESHOLD = 0.5
+        const HENTAI_THRESHOLD = 0.3
+        const COMBINED_THRESHOLD = 0.6
 
         if (pornScore > PORN_THRESHOLD) {
             return {
                 unsafe: true,
-                reason: `This image was flagged as containing explicit content and cannot be uploaded.`
+                reason: 'This image was flagged as containing explicit content and cannot be uploaded.',
             }
         }
 
         if (hentaiScore > HENTAI_THRESHOLD) {
             return {
                 unsafe: true,
-                reason: `This image was contains Hentai and cannot be uploaded.`
+                reason: 'This image contains Hentai and cannot be uploaded.',
             }
         }
 
         if (sexyScore > SEXY_THRESHOLD) {
             return {
                 unsafe: true,
-                reason: `This image was flagged as containing inappropriate content and cannot be uploaded.`
+                reason: 'This image was flagged as containing inappropriate content and cannot be uploaded.',
+            }
+        }
+
+        if (pornScore + sexyScore + hentaiScore > COMBINED_THRESHOLD) {
+            return {
+                unsafe: true,
+                reason: 'This image was flagged as containing inappropriate content and cannot be uploaded.',
             }
         }
 
         return { unsafe: false }
     } catch (error) {
         console.error('Error checking NSFW content:', error)
-        // In case of error, we'll allow the upload but log the error
-        return { unsafe: false }
+        return { unsafe: true, reason: 'Content safety check failed. Please try again.' }
     }
 }
