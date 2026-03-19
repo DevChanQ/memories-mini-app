@@ -1,11 +1,8 @@
 import React from 'react'
 import { MemoriesLogo } from './landing-page'
 import StampPreview from './stamp-preview'
-import { useIsMobile } from '../hooks/use-mobile'
 
 const ConstructionPage: React.FC = () => {
-    const isMobile = useIsMobile()
-
     return (
         <div className="flex flex-col min-h-screen bg-black relative overflow-hidden">
 
